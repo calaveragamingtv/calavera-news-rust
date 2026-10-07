@@ -17,7 +17,12 @@ HEADERS = {
 }
 
 
+# ============================================================
+# WEB
+# ============================================================
+
 def get_page(url):
+
     response = requests.get(
         url,
         headers=HEADERS,
@@ -50,15 +55,21 @@ def get_latest_news():
             )
 
             if full_url not in links:
+
                 links.append(full_url)
 
     if not links:
+
         raise RuntimeError(
             "No se encontraron noticias en Facepunch."
         )
 
     return links[0]
 
+
+# ============================================================
+# PARSER DE NOTICIA
+# ============================================================
 
 def parse_news(url):
 
@@ -72,11 +83,20 @@ def parse_news(url):
         "sections": []
     }
 
+    # ----------------------------
+    # Título
+    # ----------------------------
+
     if soup.title:
+
         result["title"] = soup.title.get_text(
             " ",
             strip=True
         )
+
+    # ----------------------------
+    # Fecha / tipo
+    # ----------------------------
 
     tags = soup.select_one(".tags")
 
@@ -90,10 +110,18 @@ def parse_news(url):
         parts = tag_text.split()
 
         if parts:
-            result["date"] = " ".join(parts[:3])
+
+            result["date"] = " ".join(
+                parts[:3]
+            )
 
         if "DEVBLOG" in tag_text:
+
             result["type"] = "DEVBLOG"
+
+    # ----------------------------
+    # Secciones
+    # ----------------------------
 
     sections = soup.select(
         ".news-section-block"
@@ -113,34 +141,53 @@ def parse_news(url):
             strip=True
         )
 
+        # Ignorar bloques que no son secciones reales
         if not title or title == "⠀":
             continue
+
+        # ------------------------
+        # Autor
+        # ------------------------
 
         author_element = section.select_one(
             ".section-header .author"
         )
 
         author = (
+
             author_element.get_text(
                 " ",
                 strip=True
             )
+
             if author_element
+
             else None
         )
+
+        # ------------------------
+        # Contenido
+        # ------------------------
 
         content_element = section.select_one(
             ".content"
         )
 
         content = (
+
             content_element.get_text(
                 " ",
                 strip=True
             )
+
             if content_element
+
             else ""
         )
+
+        # ------------------------
+        # Imágenes
+        # ------------------------
 
         images = []
 
@@ -151,19 +198,36 @@ def parse_news(url):
             src = image.get("src")
 
             if src:
+
                 images.append(
-                    urljoin(url, src)
+                    urljoin(
+                        url,
+                        src
+                    )
                 )
 
+        # ------------------------
+        # Guardar sección
+        # ------------------------
+
         result["sections"].append({
+
             "title": title,
+
             "author": author,
+
             "content": content,
+
             "images": images
+
         })
 
     return result
 
+
+# ============================================================
+# GUARDAR NOTICIA
+# ============================================================
 
 def save_news(news):
 
@@ -186,77 +250,9 @@ def save_news(news):
         )
 
 
-def analyze_section(section, client):
-
-    prompt = f"""
-You are a Rust game content analyst.
-
-Analyze this Rust news section and determine whether it is worth creating
-content about it for the Rust community on X.
-
-Section title:
-{section["title"]}
-
-Section author:
-{section["author"]}
-
-Section content:
-{section["content"]}
-
-Return ONLY valid JSON with this exact structure:
-
-{{
-  "title": "section title",
-  "importance": 0,
-  "interaction_potential": 0,
-  "recommended": true,
-  "content_type": "news",
-  "reason": "short explanation"
-}}
-
-Rules:
-
-- importance: integer from 1 to 10.
-- interaction_potential: integer from 1 to 10.
-- recommended: true if this section deserves its own X post, otherwise false.
-- content_type must be one of:
-  "news", "question", "debate", "fact", "curiosity"
-- reason must be short.
-- Focus on what is interesting to Rust players.
-- Consider gameplay impact, novelty, controversy, usefulness and
-  potential for player interaction.
-- Do not invent information that is not present in the section.
-"""
-
-    for attempt in range(3):
-
-        try:
-
-            response = client.models.generate_content(
-                model="gemini-3.5-flash-lite",
-                contents=prompt
-            )
-
-            return response.text
-
-        except Exception as error:
-
-            print(
-                f"Gemini intento {attempt + 1}/3 falló: {error}"
-            )
-
-            if attempt < 2:
-
-                print(
-                    "Esperando 10 segundos antes de reintentar..."
-                )
-
-                time.sleep(10)
-
-            else:
-
-                raise
-
+# ============================================================
+# GEMINI
+# ============================================================
 
 def analyze_all_sections(news):
 
@@ -265,6 +261,7 @@ def analyze_all_sections(news):
     )
 
     if not api_key:
+
         raise RuntimeError(
             "No se encontró GEMINI_API_KEY."
         )
@@ -273,69 +270,205 @@ def analyze_all_sections(news):
         api_key=api_key
     )
 
-    analyses = []
+    # --------------------------------------------------------
+    # Preparar todas las secciones para Gemini
+    # --------------------------------------------------------
 
-    total = len(news["sections"])
-
-    print(
-        f"\nSe encontraron {total} secciones."
-    )
+    sections_text = ""
 
     for index, section in enumerate(
         news["sections"],
         start=1
     ):
 
-        print(
-            "\n--------------------------------"
-        )
+        sections_text += f"""
+SECTION {index}
 
-        print(
-            f"Sección {index}/{total}: "
-            f'{section["title"]}'
-        )
+Title:
+{section["title"]}
 
-        print(
-            "--------------------------------"
-        )
+Author:
+{section["author"]}
 
-        analysis_text = analyze_section(
-            section,
-            client
-        )
+Content:
+{section["content"]}
 
-        print(
-            analysis_text
-        )
+--------------------------------
+"""
+
+    # --------------------------------------------------------
+    # Prompt
+    # --------------------------------------------------------
+
+    prompt = f"""
+You are a Rust game content analyst.
+
+Analyze ALL sections of this Rust news article.
+
+Your goal is to determine which sections are worth turning into
+individual pieces of content for the Rust community on X.
+
+ARTICLE:
+
+Title:
+{news["title"]}
+
+Date:
+{news["date"]}
+
+Type:
+{news["type"]}
+
+
+SECTIONS:
+
+{sections_text}
+
+
+RETURN FORMAT:
+
+Return ONLY valid JSON.
+
+Use exactly this structure:
+
+{{
+  "sections": [
+    {{
+      "title": "section title",
+      "importance": 0,
+      "interaction_potential": 0,
+      "recommended": true,
+      "content_type": "news",
+      "reason": "short explanation"
+    }}
+  ]
+}}
+
+
+RULES:
+
+- Return EXACTLY one analysis object for every section.
+- Keep the original section titles.
+- importance must be an integer from 1 to 10.
+- interaction_potential must be an integer from 1 to 10.
+- recommended must be true or false.
+- recommended should be true only when the section deserves
+  its own X post.
+- Do NOT recommend every section.
+- content_type must be one of:
+  "news"
+  "question"
+  "debate"
+  "fact"
+  "curiosity"
+- reason must be short.
+- Compare the sections against each other.
+- Prioritize:
+  - important gameplay changes
+  - new mechanics
+  - major balance changes
+  - controversial changes
+  - useful information for players
+  - surprising facts
+  - topics likely to generate discussion
+- Minor technical fixes should normally NOT be recommended.
+- Do not invent information.
+- Only use information contained in the article sections.
+"""
+
+    # --------------------------------------------------------
+    # Llamada a Gemini
+    # --------------------------------------------------------
+
+    for attempt in range(3):
 
         try:
 
-            analysis = json.loads(
-                analysis_text
+            print(
+                "\nEnviando todas las secciones "
+                "a Gemini..."
             )
 
-        except json.JSONDecodeError:
+            response = client.models.generate_content(
+
+                model="gemini-3.5-flash-lite",
+
+                contents=prompt
+
+            )
 
             print(
-                "ADVERTENCIA: Gemini no devolvió "
-                "JSON válido para esta sección."
+                "\nRespuesta recibida de Gemini."
             )
 
-            analysis = {
-                "title": section["title"],
-                "importance": 0,
-                "interaction_potential": 0,
-                "recommended": False,
-                "content_type": "news",
-                "reason": "Invalid Gemini response"
-            }
+            # ------------------------------------------------
+            # Convertir respuesta a JSON
+            # ------------------------------------------------
 
-        analyses.append(
-            analysis
-        )
+            try:
 
-    return analyses
+                result = json.loads(
+                    response.text
+                )
 
+            except json.JSONDecodeError:
+
+                print(
+                    "\nERROR: Gemini no devolvió "
+                    "JSON válido."
+                )
+
+                print(
+                    "\nRespuesta de Gemini:"
+                )
+
+                print(
+                    response.text
+                )
+
+                raise
+
+            # ------------------------------------------------
+            # Validar estructura
+            # ------------------------------------------------
+
+            if "sections" not in result:
+
+                raise RuntimeError(
+                    "La respuesta de Gemini no contiene "
+                    "la propiedad 'sections'."
+                )
+
+            return result["sections"]
+
+        except Exception as error:
+
+            print(
+                f"\nGemini intento "
+                f"{attempt + 1}/3 falló:"
+            )
+
+            print(
+                error
+            )
+
+            if attempt < 2:
+
+                print(
+                    "\nEsperando 30 segundos "
+                    "antes de reintentar..."
+                )
+
+                time.sleep(30)
+
+            else:
+
+                raise
+
+
+# ============================================================
+# GUARDAR ANÁLISIS
+# ============================================================
 
 def save_analysis(news, analyses):
 
@@ -345,11 +478,17 @@ def save_analysis(news, analyses):
     )
 
     result = {
+
         "url": news["url"],
+
         "title": news["title"],
+
         "date": news["date"],
+
         "type": news["type"],
+
         "sections": analyses
+
     }
 
     with open(
@@ -366,13 +505,31 @@ def save_analysis(news, analyses):
         )
 
 
+# ============================================================
+# MAIN
+# ============================================================
+
 def main():
 
-    print("================================")
-    print("       RUST NEWS BOT")
-    print("================================")
+    print(
+        "================================"
+    )
 
-    print("\nBuscando última noticia...")
+    print(
+        "       RUST NEWS BOT"
+    )
+
+    print(
+        "================================"
+    )
+
+    # --------------------------------------------------------
+    # 1. Buscar última noticia
+    # --------------------------------------------------------
+
+    print(
+        "\nBuscando última noticia..."
+    )
 
     latest_url = get_latest_news()
 
@@ -380,11 +537,21 @@ def main():
         f"URL: {latest_url}"
     )
 
-    print("\nAnalizando noticia...")
+    # --------------------------------------------------------
+    # 2. Parsear noticia
+    # --------------------------------------------------------
+
+    print(
+        "\nAnalizando noticia..."
+    )
 
     news = parse_news(
         latest_url
     )
+
+    # --------------------------------------------------------
+    # 3. Guardar noticia completa
+    # --------------------------------------------------------
 
     save_news(
         news
@@ -396,12 +563,27 @@ def main():
     )
 
     print(
-        "\nAnalizando todas las secciones..."
+        f"\nSe encontraron "
+        f"{len(news['sections'])} secciones."
+    )
+
+    # --------------------------------------------------------
+    # 4. Analizar TODAS las secciones
+    #    con UNA sola llamada a Gemini
+    # --------------------------------------------------------
+
+    print(
+        "\nAnalizando todas las secciones "
+        "con Gemini..."
     )
 
     analyses = analyze_all_sections(
         news
     )
+
+    # --------------------------------------------------------
+    # 5. Guardar análisis
+    # --------------------------------------------------------
 
     save_analysis(
         news,
@@ -425,6 +607,16 @@ def main():
         "data/news_analysis.json"
     )
 
+    print(
+        f"\nSe analizaron "
+        f"{len(analyses)} secciones."
+    )
+
+
+# ============================================================
+# ENTRY POINT
+# ============================================================
 
 if __name__ == "__main__":
+
     main()
