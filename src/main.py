@@ -28,9 +28,20 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(ROOT_DIR, "data")
 PROMPT_DIR = os.path.join(ROOT_DIR, "prompt")
 
-LATEST_NEWS_FILE = os.path.join(DATA_DIR, "latest_news.json")
-NEWS_ANALYSIS_FILE = os.path.join(DATA_DIR, "news_analysis.json")
-QUEUE_FILE = os.path.join(DATA_DIR, "content_queue.json")
+LATEST_NEWS_FILE = os.path.join(
+    DATA_DIR,
+    "latest_news.json"
+)
+
+NEWS_ANALYSIS_FILE = os.path.join(
+    DATA_DIR,
+    "news_analysis.json"
+)
+
+QUEUE_FILE = os.path.join(
+    DATA_DIR,
+    "content_queue.json"
+)
 
 ANALYZE_PROMPT_FILE = os.path.join(
     PROMPT_DIR,
@@ -55,9 +66,13 @@ MINIMUM_PUBLICATION_SCORE = 75
 # ============================================================
 
 if not GEMINI_API_KEY:
-    raise RuntimeError("GEMINI_API_KEY no está configurada.")
+    raise RuntimeError(
+        "GEMINI_API_KEY no está configurada."
+    )
 
-client = genai.Client(api_key=GEMINI_API_KEY)
+client = genai.Client(
+    api_key=GEMINI_API_KEY
+)
 
 
 # ============================================================
@@ -69,17 +84,33 @@ def load_json(path, default=None):
         return default
 
     try:
-        with open(path, "r", encoding="utf-8") as file:
+        with open(
+            path,
+            "r",
+            encoding="utf-8"
+        ) as file:
             return json.load(file)
+
     except Exception as exc:
-        print(f"ERROR leyendo JSON {path}: {exc}")
+        print(
+            f"ERROR leyendo JSON {path}: {exc}"
+        )
+
         return default
 
 
 def save_json(path, data):
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+    os.makedirs(
+        os.path.dirname(path),
+        exist_ok=True
+    )
 
-    with open(path, "w", encoding="utf-8") as file:
+    with open(
+        path,
+        "w",
+        encoding="utf-8"
+    ) as file:
+
         json.dump(
             data,
             file,
@@ -94,7 +125,11 @@ def load_prompt(path):
             f"No existe el prompt: {path}"
         )
 
-    with open(path, "r", encoding="utf-8") as file:
+    with open(
+        path,
+        "r",
+        encoding="utf-8"
+    ) as file:
         return file.read()
 
 
@@ -111,18 +146,27 @@ def clean_text(text):
 
 def parse_json_response(text):
     """
-    Intenta convertir una respuesta de Gemini en JSON.
+    Convierte una respuesta de Gemini en JSON.
 
-    Soporta respuestas que accidentalmente vienen dentro
-    de ```json ... ```.
+    Soporta:
+    - JSON directo
+    - ```json ... ```
+    - JSON embebido dentro de texto
     """
 
     if not text:
-        raise ValueError("Gemini devolvió una respuesta vacía.")
+        raise ValueError(
+            "Gemini devolvió una respuesta vacía."
+        )
 
     text = text.strip()
 
+    # --------------------------------------------------------
+    # Remove markdown code fences
+    # --------------------------------------------------------
+
     if text.startswith("```"):
+
         text = re.sub(
             r"^```(?:json)?\s*",
             "",
@@ -136,12 +180,22 @@ def parse_json_response(text):
             text
         )
 
+        text = text.strip()
+
+    # --------------------------------------------------------
+    # Direct JSON
+    # --------------------------------------------------------
+
     try:
         return json.loads(text)
+
     except json.JSONDecodeError:
         pass
 
-    # Intento adicional: buscar el primer objeto JSON.
+    # --------------------------------------------------------
+    # Search JSON object
+    # --------------------------------------------------------
+
     object_match = re.search(
         r"\{.*\}",
         text,
@@ -149,11 +203,19 @@ def parse_json_response(text):
     )
 
     if object_match:
-        return json.loads(
-            object_match.group(0)
-        )
 
-    # Intento adicional: buscar un array JSON.
+        try:
+            return json.loads(
+                object_match.group(0)
+            )
+
+        except json.JSONDecodeError:
+            pass
+
+    # --------------------------------------------------------
+    # Search JSON array
+    # --------------------------------------------------------
+
     array_match = re.search(
         r"\[.*\]",
         text,
@@ -161,9 +223,14 @@ def parse_json_response(text):
     )
 
     if array_match:
-        return json.loads(
-            array_match.group(0)
-        )
+
+        try:
+            return json.loads(
+                array_match.group(0)
+            )
+
+        except json.JSONDecodeError:
+            pass
 
     raise ValueError(
         "No se pudo interpretar la respuesta de Gemini como JSON.\n"
@@ -176,7 +243,10 @@ def parse_json_response(text):
 # ============================================================
 
 def get_latest_news():
-    print("Buscando último Rust News...")
+
+    print(
+        "Buscando último Rust News..."
+    )
 
     response = requests.get(
         BASE_URL,
@@ -196,7 +266,10 @@ def get_latest_news():
         "html.parser"
     )
 
-    for link in soup.select('a[href*="/news/"]'):
+    for link in soup.select(
+        'a[href*="/news/"]'
+    ):
+
         href = link.get("href")
 
         if not href:
@@ -220,39 +293,43 @@ def get_latest_news():
     )
 
 
-def extract_article_metadata(soup, html):
-    """
-    Obtiene título, fecha y tipo del artículo.
+def extract_article_metadata(
+    soup,
+    html
+):
 
-    Facepunch no siempre expone estos datos con el mismo
-    selector, por eso tenemos varios fallbacks.
-    """
-
-    # --------------------------------------------------------
+    # ========================================================
     # TITLE
-    # --------------------------------------------------------
+    # ========================================================
 
     title = None
 
     h1 = soup.find("h1")
 
     if h1:
+
         title = clean_text(
-            h1.get_text(" ", strip=True)
+            h1.get_text(
+                " ",
+                strip=True
+            )
         )
 
     if not title:
+
         og_title = soup.find(
             "meta",
             property="og:title"
         )
 
         if og_title:
+
             title = clean_text(
                 og_title.get("content")
             )
 
     if not title and soup.title:
+
         title = clean_text(
             soup.title.get_text()
         )
@@ -264,21 +341,26 @@ def extract_article_metadata(soup, html):
             flags=re.IGNORECASE
         )
 
-    # --------------------------------------------------------
+    # ========================================================
     # DATE
-    # --------------------------------------------------------
+    # ========================================================
 
     date = None
 
     time_element = soup.find("time")
 
     if time_element:
+
         date = (
             time_element.get("datetime")
-            or time_element.get_text(" ", strip=True)
+            or time_element.get_text(
+                " ",
+                strip=True
+            )
         )
 
     if not date:
+
         text_content = soup.get_text(
             " ",
             strip=True
@@ -291,18 +373,21 @@ def extract_article_metadata(soup, html):
         ]
 
         for pattern in date_patterns:
+
             match = re.search(
                 pattern,
                 text_content
             )
 
             if match:
+
                 date = match.group(0)
+
                 break
 
-    # --------------------------------------------------------
+    # ========================================================
     # TYPE
-    # --------------------------------------------------------
+    # ========================================================
 
     article_type = None
 
@@ -312,12 +397,15 @@ def extract_article_metadata(soup, html):
     ).upper()
 
     if "DEVBLOG" in page_text_upper:
+
         article_type = "DEVBLOG"
 
     elif "COMMUNITY" in page_text_upper:
+
         article_type = "COMMUNITY"
 
     elif "NEWS" in page_text_upper:
+
         article_type = "NEWS"
 
     return {
@@ -328,6 +416,7 @@ def extract_article_metadata(soup, html):
 
 
 def extract_sections(soup):
+
     sections = []
 
     blocks = soup.select(
@@ -338,11 +427,14 @@ def extract_sections(soup):
         f"Secciones encontradas: {len(blocks)}"
     )
 
-    for index, block in enumerate(blocks, start=1):
+    for index, block in enumerate(
+        blocks,
+        start=1
+    ):
 
-        # ----------------------------------------------------
+        # ====================================================
         # HEADER
-        # ----------------------------------------------------
+        # ====================================================
 
         title_element = block.select_one(
             ".section-header .title"
@@ -370,9 +462,9 @@ def extract_sections(soup):
             else ""
         )
 
-        # ----------------------------------------------------
+        # ====================================================
         # CONTENT
-        # ----------------------------------------------------
+        # ====================================================
 
         content_element = block.select_one(
             ".content"
@@ -381,6 +473,7 @@ def extract_sections(soup):
         content = ""
 
         if content_element:
+
             content = clean_text(
                 content_element.get_text(
                     " ",
@@ -388,13 +481,14 @@ def extract_sections(soup):
                 )
             )
 
-        # ----------------------------------------------------
+        # ====================================================
         # IMAGES
-        # ----------------------------------------------------
+        # ====================================================
 
         images = []
 
         if content_element:
+
             for image in content_element.select("img"):
 
                 src = image.get("src")
@@ -408,13 +502,14 @@ def extract_sections(soup):
                 )
 
                 if image_url not in images:
+
                     images.append(
                         image_url
                     )
 
-        # ----------------------------------------------------
-        # SKIP EMPTY / PLACEHOLDER TITLES
-        # ----------------------------------------------------
+        # ====================================================
+        # SKIP INVALID SECTIONS
+        # ====================================================
 
         if not title:
             continue
@@ -437,9 +532,12 @@ def extract_sections(soup):
 
 
 def scrape_latest_article():
+
     url = get_latest_news()
 
-    print(f"Último artículo: {url}")
+    print(
+        f"Último artículo: {url}"
+    )
 
     response = requests.get(
         url,
@@ -495,13 +593,17 @@ def scrape_latest_article():
 # GEMINI - SECTION ANALYSIS
 # ============================================================
 
-def build_sections_for_prompt(sections):
+def build_sections_for_prompt(
+    sections
+):
+
     blocks = []
 
     for index, section in enumerate(
         sections,
         start=1
     ):
+
         block = (
             f"SECCIÓN {index}\n"
             f"TÍTULO: {section['title']}\n"
@@ -510,12 +612,19 @@ def build_sections_for_prompt(sections):
             f"{section['content']}\n"
         )
 
-        blocks.append(block)
+        blocks.append(
+            block
+        )
 
-    return "\n\n".join(blocks)
+    return "\n\n".join(
+        blocks
+    )
 
 
-def analyze_sections(article):
+def analyze_sections(
+    article
+):
+
     prompt_template = load_prompt(
         ANALYZE_PROMPT_FILE
     )
@@ -557,7 +666,11 @@ def analyze_sections(article):
         response.text
     )
 
-    if not isinstance(result, list):
+    if not isinstance(
+        result,
+        list
+    ):
+
         raise ValueError(
             "El análisis de Gemini no devolvió un array."
         )
@@ -568,6 +681,7 @@ def analyze_sections(article):
         article["sections"],
         result
     ):
+
         item = {
             **original_section,
             **analysis
@@ -588,6 +702,7 @@ def create_queue(
     article,
     analyzed_sections
 ):
+
     selected = []
 
     for section in analyzed_sections:
@@ -603,8 +718,16 @@ def create_queue(
         )
 
         try:
-            score = int(score)
-        except (TypeError, ValueError):
+
+            score = int(
+                score
+            )
+
+        except (
+            TypeError,
+            ValueError
+        ):
+
             score = 0
 
         if publication_type == "skip":
@@ -620,7 +743,10 @@ def create_queue(
             section
         )
 
-    # Ordenamos por publication score.
+    # ========================================================
+    # SORT BY SCORE
+    # ========================================================
+
     selected.sort(
         key=lambda item: int(
             item.get(
@@ -637,10 +763,15 @@ def create_queue(
         selected,
         start=1
     ):
+
         items.append({
+
             "article_url": article["url"],
+
             "article_title": article["title"],
+
             "article_date": article["date"],
+
             "article_type": article["type"],
 
             "title": section.get(
@@ -703,43 +834,56 @@ def create_queue(
             ),
 
             "published": False,
+
             "published_at": None,
+
             "platform": None,
+
             "post_id": None,
 
             "generated_text": None,
+
             "generated_at": None,
 
             "priority": priority
         })
 
     queue = {
+
         "article": {
+
             "url": article["url"],
+
             "title": article["title"],
+
             "date": article["date"],
+
             "type": article["type"]
         },
 
         "general_publication": {
+
             "discord_posted": False,
+
             "discord_posted_at": None,
 
             "x_posted": False,
+
             "x_posted_at": None,
+
             "x_post_id": None
         },
 
         "selection": {
-            "minimum_publication_score": (
-                MINIMUM_PUBLICATION_SCORE
-            ),
-            "total_sections": len(
-                article["sections"]
-            ),
-            "selected_sections": len(
-                items
-            )
+
+            "minimum_publication_score":
+                MINIMUM_PUBLICATION_SCORE,
+
+            "total_sections":
+                len(article["sections"]),
+
+            "selected_sections":
+                len(items)
         },
 
         "items": items
@@ -748,7 +892,11 @@ def create_queue(
     return queue
 
 
-def is_same_article(queue, article):
+def is_same_article(
+    queue,
+    article
+):
+
     if not queue:
         return False
 
@@ -767,14 +915,10 @@ def is_same_article(queue, article):
 # LAST POSTS
 # ============================================================
 
-def get_last_posts(queue, limit=5):
-    """
-    Recupera los últimos posts generados/publicados
-    para que Gemini pueda evitar repetir estructuras.
-
-    Por ahora usamos la cola actual y los items que
-    ya tengan generated_text.
-    """
+def get_last_posts(
+    queue,
+    limit=5
+):
 
     posts = []
 
@@ -789,17 +933,21 @@ def get_last_posts(queue, limit=5):
     published_items = [
         item
         for item in items
-        if item.get("generated_text")
+        if item.get(
+            "generated_text"
+        )
     ]
 
     published_items.sort(
-        key=lambda item: item.get(
-            "generated_at"
-        ) or "",
+        key=lambda item:
+            item.get(
+                "generated_at"
+            ) or "",
         reverse=True
     )
 
     for item in published_items[:limit]:
+
         posts.append(
             item.get(
                 "generated_text"
@@ -809,9 +957,15 @@ def get_last_posts(queue, limit=5):
     return posts
 
 
-def format_last_posts(last_posts):
+def format_last_posts(
+    last_posts
+):
+
     if not last_posts:
-        return "No hay posts anteriores disponibles."
+
+        return (
+            "No hay posts anteriores disponibles."
+        )
 
     result = []
 
@@ -819,11 +973,14 @@ def format_last_posts(last_posts):
         last_posts,
         start=1
     ):
+
         result.append(
             f"POST {index}:\n{post}"
         )
 
-    return "\n\n".join(result)
+    return "\n\n".join(
+        result
+    )
 
 
 # ============================================================
@@ -834,12 +991,6 @@ def generate_general_announcement(
     article,
     queue
 ):
-    """
-    Genera X + Discord en una sola llamada.
-
-    IMPORTANTE:
-    Esta función NO publica nada.
-    """
 
     prompt_template = load_prompt(
         GENERAL_ANNOUNCEMENT_PROMPT_FILE
@@ -859,7 +1010,9 @@ def generate_general_announcement(
         "items",
         []
     ):
+
         sections_for_prompt.append(
+
             (
                 f"TÍTULO: {item.get('title', '')}\n"
                 f"IMPORTANCIA: {item.get('importance', 0)}\n"
@@ -878,22 +1031,27 @@ def generate_general_announcement(
 
     prompt = (
         prompt_template
+
         .replace(
             "{{ARTICLE_TITLE}}",
             article["title"]
         )
+
         .replace(
             "{{ARTICLE_DATE}}",
             article["date"]
         )
+
         .replace(
             "{{ARTICLE_TYPE}}",
             article["type"]
         )
+
         .replace(
             "{{LAST_POSTS}}",
             last_posts_text
         )
+
         .replace(
             "{{SECTIONS}}",
             sections_text
@@ -913,7 +1071,11 @@ def generate_general_announcement(
         response.text
     )
 
-    if not isinstance(result, dict):
+    if not isinstance(
+        result,
+        dict
+    ):
+
         raise ValueError(
             "El anuncio general no devolvió un objeto JSON."
         )
@@ -927,17 +1089,21 @@ def generate_general_announcement(
     )
 
     if not x_text:
+
         raise ValueError(
             "Gemini no devolvió x_text."
         )
 
     if not discord_text:
+
         raise ValueError(
             "Gemini no devolvió discord_text."
         )
 
     return {
+
         "x_text": x_text.strip(),
+
         "discord_text": discord_text.strip()
     }
 
@@ -946,13 +1112,17 @@ def generate_general_announcement(
 # X POST GENERATION
 # ============================================================
 
-def generate_x_post(item):
+def generate_x_post(
+    item
+):
+
     prompt_template = load_prompt(
         X_POST_PROMPT_FILE
     )
 
     prompt = (
         prompt_template
+
         .replace(
             "{{SECTION_TITLE}}",
             item.get(
@@ -960,6 +1130,7 @@ def generate_x_post(item):
                 ""
             )
         )
+
         .replace(
             "{{SECTION_CONTENT}}",
             item.get(
@@ -967,6 +1138,7 @@ def generate_x_post(item):
                 ""
             )
         )
+
         .replace(
             "{{ARTICLE_TITLE}}",
             item.get(
@@ -974,6 +1146,7 @@ def generate_x_post(item):
                 ""
             )
         )
+
         .replace(
             "{{ARTICLE_DATE}}",
             item.get(
@@ -993,15 +1166,53 @@ def generate_x_post(item):
         contents=prompt
     )
 
-    text = response.text.strip()
+    raw_text = response.text.strip()
 
-    if not text:
+    if not raw_text:
+
         raise ValueError(
             "Gemini devolvió un post vacío."
         )
 
-    # Por seguridad, eliminamos bloques de código
-    # si Gemini los agrega.
+    # ========================================================
+    # GEMINI MAY RETURN JSON
+    # ========================================================
+
+    text = raw_text
+
+    try:
+
+        parsed = parse_json_response(
+            raw_text
+        )
+
+        if isinstance(
+            parsed,
+            dict
+        ):
+
+            if parsed.get("text"):
+
+                text = str(
+                    parsed["text"]
+                ).strip()
+
+            elif parsed.get("x_text"):
+
+                text = str(
+                    parsed["x_text"]
+                ).strip()
+
+    except Exception:
+
+        # Si no es JSON, asumimos que Gemini devolvió
+        # directamente el texto del post.
+        text = raw_text
+
+    # ========================================================
+    # REMOVE MARKDOWN CODE FENCES
+    # ========================================================
+
     text = re.sub(
         r"^```(?:text)?\s*",
         "",
@@ -1017,6 +1228,12 @@ def generate_x_post(item):
 
     text = text.strip()
 
+    if not text:
+
+        raise ValueError(
+            "El texto generado por Gemini quedó vacío."
+        )
+
     return text
 
 
@@ -1028,28 +1245,40 @@ def send_to_buffer(
     message,
     images=None
 ):
+
     if not BUFFER_API_KEY:
+
         raise RuntimeError(
             "BUFFER_API_KEY no está configurada."
         )
 
     if not BUFFER_CHANNEL_ID:
+
         raise RuntimeError(
             "BUFFER_CHANNEL_ID no está configurada."
         )
 
+    # ========================================================
+    # BUFFER GRAPHQL
+    #
+    # createPost devuelve PostActionPayload.
+    # La respuesta exitosa contiene un objeto "post".
+    # ========================================================
+
     query = """
     mutation CreatePost($input: CreatePostInput!) {
       createPost(input: $input) {
-        ... on Post {
-          id
-          text
-          assets {
+        ... on PostActionSuccess {
+          post {
             id
-            mimeType
+            text
+            assets {
+              id
+              mimeType
+            }
           }
         }
-        ... on CreatePostError {
+        ... on MutationError {
           message
         }
       }
@@ -1057,15 +1286,24 @@ def send_to_buffer(
     """
 
     input_data = {
+
         "text": message,
+
         "channelId": BUFFER_CHANNEL_ID,
+
         "schedulingType": "automatic",
+
         "mode": "shareNow"
     }
+
+    # ========================================================
+    # IMAGES
+    # ========================================================
 
     valid_images = []
 
     if images:
+
         for image_url in images:
 
             if not image_url:
@@ -1080,6 +1318,7 @@ def send_to_buffer(
                     "https://"
                 )
             ):
+
                 continue
 
             valid_images.append(
@@ -1087,30 +1326,45 @@ def send_to_buffer(
             )
 
     if valid_images:
+
         input_data["assets"] = [
+
             {
                 "image": {
                     "url": valid_images[0]
                 }
             }
+
         ]
 
+    # ========================================================
+    # REQUEST
+    # ========================================================
+
     headers = {
-        "Authorization": (
-            f"Bearer {BUFFER_API_KEY}"
-        ),
-        "Content-Type": "application/json"
+
+        "Authorization":
+            f"Bearer {BUFFER_API_KEY}",
+
+        "Content-Type":
+            "application/json"
     }
 
     response = requests.post(
+
         "https://api.buffer.com",
+
         headers=headers,
+
         json={
+
             "query": query,
+
             "variables": {
                 "input": input_data
             }
         },
+
         timeout=30
     )
 
@@ -1118,7 +1372,12 @@ def send_to_buffer(
 
     result = response.json()
 
+    # ========================================================
+    # GRAPHQL ERRORS
+    # ========================================================
+
     if result.get("errors"):
+
         raise RuntimeError(
             "Buffer API error: "
             + json.dumps(
@@ -1126,6 +1385,10 @@ def send_to_buffer(
                 ensure_ascii=False
             )
         )
+
+    # ========================================================
+    # CREATE POST
+    # ========================================================
 
     create_post = result.get(
         "data",
@@ -1135,62 +1398,104 @@ def send_to_buffer(
     )
 
     if not create_post:
+
         raise RuntimeError(
             "Buffer no devolvió createPost."
         )
 
-    if create_post.get("message") and not create_post.get("id"):
+    # ========================================================
+    # BUFFER BUSINESS ERROR
+    # ========================================================
+
+    if create_post.get(
+        "message"
+    ):
+
         raise RuntimeError(
-            f"Buffer rechazó el post: "
+            "Buffer rechazó el post: "
             f"{create_post.get('message')}"
         )
 
-    if not create_post.get("id"):
+    # ========================================================
+    # SUCCESS POST
+    # ========================================================
+
+    post = create_post.get(
+        "post"
+    )
+
+    if not post:
+
+        raise RuntimeError(
+            "Buffer no devolvió el objeto post."
+        )
+
+    if not post.get(
+        "id"
+    ):
+
         raise RuntimeError(
             "Buffer no devolvió un post ID."
         )
 
-    return create_post
+    return post
 
 
 # ============================================================
 # DAILY CONTENT PUBLICATION
 # ============================================================
 
-def get_next_unpublished_item(queue):
+def get_next_unpublished_item(
+    queue
+):
+
     items = queue.get(
         "items",
         []
     )
 
     unpublished = [
+
         item
+
         for item in items
-        if not item.get("published", False)
+
+        if not item.get(
+            "published",
+            False
+        )
     ]
 
     if not unpublished:
+
         return None
 
     unpublished.sort(
-        key=lambda item: item.get(
-            "priority",
-            999999
-        )
+
+        key=lambda item:
+            item.get(
+                "priority",
+                999999
+            )
     )
 
     return unpublished[0]
 
 
-def publish_next_content(queue):
+def publish_next_content(
+    queue
+):
+
     item = get_next_unpublished_item(
         queue
     )
 
     if not item:
+
         print(
             "No quedan secciones pendientes para publicar."
         )
+
         return False
 
     print(
@@ -1213,9 +1518,9 @@ def publish_next_content(queue):
         f"Prioridad: {item.get('priority')}"
     )
 
-    # --------------------------------------------------------
+    # ========================================================
     # GENERATE
-    # --------------------------------------------------------
+    # ========================================================
 
     generated_text = generate_x_post(
         item
@@ -1229,9 +1534,9 @@ def publish_next_content(queue):
         generated_text
     )
 
-    # --------------------------------------------------------
+    # ========================================================
     # IMAGE
-    # --------------------------------------------------------
+    # ========================================================
 
     images = item.get(
         "images",
@@ -1239,24 +1544,29 @@ def publish_next_content(queue):
     )
 
     if images:
+
         print(
             f"Imagen encontrada: {images[0]}"
         )
+
     else:
+
         print(
             "No hay imagen para este contenido."
         )
 
-    # --------------------------------------------------------
+    # ========================================================
     # BUFFER
-    # --------------------------------------------------------
+    # ========================================================
 
     print(
         "\nPublicando mediante Buffer..."
     )
 
     post = send_to_buffer(
+
         generated_text,
+
         images=images
     )
 
@@ -1265,24 +1575,30 @@ def publish_next_content(queue):
     )
 
     print(
-        f"Publicado correctamente en Buffer. ID: {post_id}"
+        f"Publicado correctamente en Buffer. "
+        f"ID: {post_id}"
     )
 
-    # --------------------------------------------------------
+    # ========================================================
     # SAVE STATE ONLY AFTER SUCCESS
-    # --------------------------------------------------------
+    # ========================================================
 
     now = datetime.now(
         timezone.utc
     ).isoformat()
 
-    item["generated_text"] = generated_text
+    item["generated_text"] = (
+        generated_text
+    )
+
     item["generated_at"] = now
 
     item["published"] = True
+
     item["published_at"] = now
 
     item["platform"] = "x"
+
     item["post_id"] = post_id
 
     save_json(
@@ -1302,18 +1618,19 @@ def publish_next_content(queue):
 
 
 # ============================================================
-# DEBUG / GENERAL ANNOUNCEMENT PREVIEW
+# GENERAL ANNOUNCEMENT PREVIEW
 # ============================================================
 
 def preview_general_announcement(
     article,
     queue
 ):
-    """
-    Genera el anuncio general pero NO publica.
 
-    Esto nos permite validar el prompt antes de
-    conectar Discord + Buffer para este flujo.
+    """
+    Genera X + Discord pero NO publica.
+
+    Se mantiene así hasta validar que el prompt
+    produce exactamente el resultado esperado.
     """
 
     publication = queue.get(
@@ -1321,34 +1638,61 @@ def preview_general_announcement(
     )
 
     if not publication:
+
         publication = {
-            "discord_posted": False,
-            "discord_posted_at": None,
-            "x_posted": False,
-            "x_posted_at": None,
-            "x_post_id": None
+
+            "discord_posted":
+                False,
+
+            "discord_posted_at":
+                None,
+
+            "x_posted":
+                False,
+
+            "x_posted_at":
+                None,
+
+            "x_post_id":
+                None
         }
 
-        queue["general_publication"] = publication
+        queue["general_publication"] = (
+            publication
+        )
 
-    # --------------------------------------------------------
-    # NO REGENERATE IF ALREADY PUBLISHED
-    # --------------------------------------------------------
+    # ========================================================
+    # ALREADY PROCESSED
+    # ========================================================
 
     if (
-        publication.get("x_posted")
-        or publication.get("discord_posted")
+        publication.get(
+            "x_posted"
+        )
+        or
+        publication.get(
+            "discord_posted"
+        )
     ):
+
         print(
             "\nEl anuncio general ya tiene actividad registrada."
         )
 
         return None
 
+    # ========================================================
+    # GENERATE
+    # ========================================================
+
     announcement = generate_general_announcement(
         article,
         queue
     )
+
+    # ========================================================
+    # PREVIEW X
+    # ========================================================
 
     print(
         "\n========================================"
@@ -1365,6 +1709,10 @@ def preview_general_announcement(
     print(
         announcement["x_text"]
     )
+
+    # ========================================================
+    # PREVIEW DISCORD
+    # ========================================================
 
     print(
         "\n========================================"
@@ -1407,43 +1755,54 @@ def main():
         "========================================"
     )
 
-    # --------------------------------------------------------
-    # 1. SCRAPE LATEST ARTICLE
-    # --------------------------------------------------------
+    # ========================================================
+    # 1. SCRAPE
+    # ========================================================
 
     article = scrape_latest_article()
 
-    # --------------------------------------------------------
+    # ========================================================
     # 2. SAVE LATEST NEWS
-    # --------------------------------------------------------
+    # ========================================================
 
     save_json(
+
         LATEST_NEWS_FILE,
+
         {
-            "url": article["url"],
-            "title": article["title"],
-            "date": article["date"],
-            "type": article["type"]
+
+            "url":
+                article["url"],
+
+            "title":
+                article["title"],
+
+            "date":
+                article["date"],
+
+            "type":
+                article["type"]
         }
     )
 
-    # --------------------------------------------------------
-    # 3. LOAD EXISTING QUEUE
-    # --------------------------------------------------------
+    # ========================================================
+    # 3. LOAD QUEUE
+    # ========================================================
 
     existing_queue = load_json(
         QUEUE_FILE,
         None
     )
 
-    # --------------------------------------------------------
+    # ========================================================
     # 4. NEW ARTICLE?
-    # --------------------------------------------------------
+    # ========================================================
 
     if not is_same_article(
         existing_queue,
         article
     ):
+
         print(
             "\nDetectado nuevo artículo."
         )
@@ -1457,15 +1816,28 @@ def main():
         )
 
         save_json(
+
             NEWS_ANALYSIS_FILE,
+
             {
+
                 "article": {
-                    "url": article["url"],
-                    "title": article["title"],
-                    "date": article["date"],
-                    "type": article["type"]
+
+                    "url":
+                        article["url"],
+
+                    "title":
+                        article["title"],
+
+                    "date":
+                        article["date"],
+
+                    "type":
+                        article["type"]
                 },
-                "sections": analyzed_sections
+
+                "sections":
+                    analyzed_sections
             }
         )
 
@@ -1474,7 +1846,9 @@ def main():
         # ----------------------------------------------------
 
         queue = create_queue(
+
             article,
+
             analyzed_sections
         )
 
@@ -1488,25 +1862,26 @@ def main():
         )
 
         print(
-            f"Secciones totales: "
+            "Secciones totales: "
             f"{queue['selection']['total_sections']}"
         )
 
         print(
-            f"Secciones seleccionadas: "
+            "Secciones seleccionadas: "
             f"{queue['selection']['selected_sections']}"
         )
 
     else:
+
         queue = existing_queue
 
         print(
             "\nNo hay un nuevo artículo."
         )
 
-    # --------------------------------------------------------
+    # ========================================================
     # 5. GENERAL ANNOUNCEMENT
-    # --------------------------------------------------------
+    # ========================================================
 
     general_publication = queue.get(
         "general_publication",
@@ -1514,41 +1889,48 @@ def main():
     )
 
     if not (
+
         general_publication.get(
             "x_posted",
             False
         )
+
         or
+
         general_publication.get(
             "discord_posted",
             False
         )
     ):
+
         print(
             "\nGenerando preview del anuncio general..."
         )
 
         preview_general_announcement(
+
             article,
+
             queue
         )
 
     else:
+
         print(
             "\nAnuncio general ya procesado."
         )
 
-    # --------------------------------------------------------
+    # ========================================================
     # 6. DAILY SECTION CONTENT
-    # --------------------------------------------------------
+    # ========================================================
 
     publish_next_content(
         queue
     )
 
-    # --------------------------------------------------------
-    # FINAL SAVE
-    # --------------------------------------------------------
+    # ========================================================
+    # 7. FINAL SAVE
+    # ========================================================
 
     save_json(
         QUEUE_FILE,
@@ -1567,6 +1949,10 @@ def main():
         "========================================"
     )
 
+
+# ============================================================
+# ENTRY POINT
+# ============================================================
 
 if __name__ == "__main__":
     main()
