@@ -93,13 +93,14 @@
       "publication_type": "standalone",
       "content_type": "news",
       "reason": "Resolver qué hacer con la carne podrida y fabricar low grade quemando carne con un generador que requiere mezcla manual es una mecánica muy llamativa y útil para bases.",
-      "published": false,
-      "published_at": null,
-      "platform": null,
-      "post_id": null,
-      "generated_text": null,
-      "generated_at": null,
-      "priority": 2
+      "published": true,
+      "published_at": "2026-10-07T23:05:55.762642+00:00",
+      "platform": "x",
+      "post_id": "6ac6d051365feab0d7327f7f",
+      "generated_text": "El Biofuel Generator quema carne podrida para dar low grade, pero hay que mezclarlo a mano cada 30 minutos o atarlo a IO. ¿Valdrá la pena estar pendiente de la grasa?",
+      "generated_at": "2026-10-07T23:05:55.762664+00:00",
+      "priority": 2,
+      "published_image_url": "https://files.facepunch.com/kaantasan/1b2911b1/oct2026_Biofuel_Generator_deployable_1_1080.jpg"
     },
     {
       "article_url": "https://rust.facepunch.com/news/livestock",
