@@ -1,0 +1,159 @@
+{
+  "url": "https://rust.facepunch.com/news/livestock",
+  "title": "",
+  "date": "",
+  "status": "pending",
+  "sections": [
+    {
+      "title": "LIVESTOCK",
+      "author": "Maverick",
+      "content": "This patch we are introducing cows and sheep. What resources can THEY GIVE? Both produce dung , cows produce milk, and sheep produce wool . They can also be harvested for meat, bones and leather like any other animal. Additionally, you can sell a grown animal to an NPC in the ranch. How to set up a farm? There are multiple ways to capture wild livestock, some more efficient than others, but they should all be pretty intuitive. When the new navmesh is enabled, NPCs can enter player structures and respect doors opening/closing, so the sky is the limit. Like plants, they have genetics and needs, and can be bred to hunt for a god clone. However, the genes won't behave exactly like plants, so old techniques may not apply. WILL IT TANK PERFORMANCE? Each game frame, only a subset of the NPCs are processed, up to a hardcoded max time per frame. So when we increase the population, the server doesn't directly lose FPS, instead NPCs just become slower to react because we distribute the load across frames automatically when over budget. We still spent time multithreading and optimising the new navigation system, at least doubling its performance since the last patch. As usual, we'll be monitoring server performance and fixing problems as they appear.",
+      "images": [
+        "https://files.facepunch.com/kaantasan/1b3011b1/oct2026_livestock_animals_cows_sheep_2_1080%20%281%29.jpg"
+      ],
+      "importance": 10,
+      "interaction_potential": 10,
+      "priority": 1,
+      "publication_type": "standalone",
+      "content_type": "news",
+      "published": false
+    },
+    {
+      "title": "Air wolf repairable helipad",
+      "author": "Martyn Chapman",
+      "content": "At the start of the wipe the Air Wolf helipad in Bandit Camp will now be in a state of disrepair. The air vehicle vendor NPC will refuse to sell vehicles to anyone until the helipad is repaired. Repairing the helipad is a process similar to constructing siege weapons - a certain amount of resources are required and you can transfer resources from your inventory by bashing the helipad with a hammer. Once the helipad is repaired it stays repaired for the duration of the wipe. The intention is that repairing the helipad requires a communal effort and air vehicles purchased from this vendor should no longer start spawning too quickly into the start of the wipe. If a clan wishes to get quick access to air vehicles they are required to invest a significant amount of resources to do so and they are also opening up access to the vendor to everyone else on the server. Server admins can change this behaviour via convars vehicle.padrepairsrequired (if false this change is effectively reverted) and vehicle.setrepairablepads (force helipad into fully disrepaired/repaired state with 0/1)",
+      "images": [
+        "https://files.facepunch.com/martynchapman/2026/September/30_13-24-FondNeonrainbowfish.jpg",
+        "https://files.facepunch.com/kaantasan/1b2911b1/rust_nov2025update_helicopter_balance_1_1080.jpg"
+      ],
+      "importance": 9,
+      "interaction_potential": 10,
+      "priority": 2,
+      "publication_type": "standalone",
+      "content_type": "debate",
+      "published": false
+    },
+    {
+      "title": "Biofuel Generator",
+      "author": "Ian Henderson",
+      "content": "A way to finally make use of raw or spoiled meat. The Biofuel Generator converts organic matter to low grade, but it must be stirred by hand! You can fill it up, stir it and let it process. It will take around 30~ minutes before you'll have to stir again, but don't worry - you can hook up some IO to let you know it needs stirring even when you're in the next room. The amount of low grade you're given depends on the type of organic matter you put in, those with a larger calorific value will give you more low grade.",
+      "images": [
+        "https://files.facepunch.com/kaantasan/1b2911b1/oct2026_Biofuel_Generator_deployable_1_1080.jpg"
+      ],
+      "importance": 9,
+      "interaction_potential": 9,
+      "priority": 3,
+      "publication_type": "standalone",
+      "content_type": "news",
+      "published": false
+    },
+    {
+      "title": "Milk",
+      "author": "Jarryd Campi",
+      "content": "Cows give you access to a new resource - milk. It can be consumed as is, but if you refrigerate it for 4 hours, you will gain a new option to skim the milk. Skimming the milk will give you two items - Skimmed Milk and Cream. Cream is a more powerful consumable. Milk and Cream can also be used in a variety of crafting recipes. Milk will generally increase the duration of tea effects, while Cream can be used to increase the potency of those effects.",
+      "images": [
+        "https://files.facepunch.com/kaantasan/1b3011b1/rust_milk_3_1080_jpg.png"
+      ],
+      "importance": 8,
+      "interaction_potential": 8,
+      "priority": 4,
+      "publication_type": "standalone",
+      "content_type": "news",
+      "published": false
+    },
+    {
+      "title": "POWERGRID LOOT ROOMS",
+      "author": "Damian Lazarski",
+      "content": "Building on the Powerplant loot room introduced in the Power Trip update, we’ve added new loot rooms to many other monuments. These rooms are locked by default and become accessible once enough Heavy Fuses have been inserted into the Powerplant to generate the required power. The number of Heavy Fuses needed to unlock each room varies, with more challenging monuments requiring more fuses than beginner-friendly ones. We won’t spoil the exact locations of these new rooms, but you’ll find them at the following monuments: Airfield Ferry Terminal Harbour 1 Harbour 2 Ferry Terminal Junkyard Launch Site Military Tunnels Nuclear Missile Silo Radtown Sewer Branch Trainyard Water Treatment Plant",
+      "images": [
+        "https://files.facepunch.com/kaantasan/1b3011b1/rust_lootroom_4_1080.jpg"
+      ],
+      "importance": 9,
+      "interaction_potential": 9,
+      "priority": 5,
+      "publication_type": "standalone",
+      "content_type": "news",
+      "published": false
+    },
+    {
+      "title": "sandbag stacking",
+      "author": "Adam W",
+      "content": "Sandbags have been reworked. They now have four stages, and each stage is upgraded to the next by stacking another sandbag deployable on top. Each stage grows taller, with the final stage being a pillbox version. All Sandbag skins are supported across all variations. The crating cost of the sandbag deployable has been reduced to account for needing to stack more of them. When found in loot, Sandbag Barricades will now be a stack of 4. We've also increased the total stack size to 20.",
+      "images": [],
+      "importance": 7,
+      "interaction_potential": 8,
+      "priority": 6,
+      "publication_type": "standalone",
+      "content_type": "news",
+      "published": false
+    },
+    {
+      "title": "Client Predicted Grenades/Explosives",
+      "author": "Ian Henderson",
+      "content": "Grenades/C4/Satchels in Rust are server-sided. This means when you left-click, your client will tell the server that it has to spawn the grenade or c4, etc and then we have to wait for the server to do so. With higher ping, this can feel like a substantial wait. We are now introducing some client prediction when you use a grenade/c4/satchel. This means that throwing these items will now feel way smoother (especially on higher pings) as your local client will simulate what will happen on the server before the server has to tell us, but don't worry: if there are any discrepancies, your client will be corrected. This shouldn't happen too often, but it will kick in when it needs to.",
+      "images": [],
+      "importance": 9,
+      "interaction_potential": 9,
+      "priority": 7,
+      "publication_type": "standalone",
+      "content_type": "news",
+      "published": false
+    },
+    {
+      "title": "Plague Doctor Hazmat SUIT Item DLC",
+      "author": "",
+      "content": "The Plague Doctor is in town. The Plague Doctor delivers no cure - only death and decay. Bring out your dead, or prepare to join them. The Plague Doctor Hazmat Suit can be purchased in-game or from the Rust Steam item store.",
+      "images": [
+        "https://files.facepunch.com/matti/1b3011b1/30_10-50-StormyBushbaby.jpg"
+      ],
+      "importance": 7,
+      "interaction_potential": 8,
+      "priority": 8,
+      "publication_type": "standalone",
+      "content_type": "news",
+      "published": false
+    },
+    {
+      "title": "Rust Render Pipeline",
+      "author": "Aidan Murray",
+      "content": "Because Rust has been around for so long, we were still using Unity’s old Built-in Render Pipeline, which has worked for the most part but has been very limiting in the optimisations we can apply and the effects we can render. We have now migrated to the new Rust Render Pipeline, which is a custom Scriptable Render Pipeline made specifically for Rust by our graphics team. This gives us a lot more control over the rendering of Rust as a whole. This wasn’t easy, as we had to remake almost every effect in the game to work with this new pipeline. The main benefit of this will be performance. At first, you should see slightly better performance in most areas of the game, as the new pipeline comes with less overhead. However, this is just the beginning. Our initial goal was to get this pipeline working in tandem with the original pipeline to ensure everything worked correctly and that we could still switch between them at runtime. Once we have fully transitioned, we will be able to optimise this pipeline further, meaning there will be more performance gains in the near future. We also have plans for improving the quality of graphics in the game where we weren’t previously able to do due to the old pipeline. The Rust Render Pipeline can be toggled via a setting under the experimental tab so players can switch back and forth between pipelines in case there are any issues initially. This setting is only going to be here for the first month in case anyone encounters graphical or performance issues that we missed while testing. Hopefully, after the next patch, we’ll be able to remove this fully and have RRP as the default once we know that no serious issues remain.",
+      "images": [
+        "https://files.facepunch.com/kaantasan/1b3011b1/oct2026_rrp_rust_render_pipeline_1_1080.jpg"
+      ],
+      "importance": 9,
+      "interaction_potential": 8,
+      "priority": 9,
+      "publication_type": "standalone",
+      "content_type": "news",
+      "published": false
+    },
+    {
+      "title": "Anticheat: Additional Secure Servers",
+      "author": "Ryan",
+      "content": "Back in March we introduced the ability for servers to require TPM + Secure Boot , enabling it for 6 of our own servers. Over the last 6+ months we have seen security feature adoption grow at a steady pace and we're ready to switch more servers to secure, continuing with the following Facepunch servers: [US East] Facepunch 1 [EA] Facepunch 1 [EU] Facepunch 15 [EU East] Facepunch 1 [EU] Facepunch 16 [EA] Facepunch 2 Our desired goal is still to make it global for all servers in Rust, but we still have some ways to go for adoption, see adoption rates over the last 6+ months: If your hardware supports it, we would strongly recommend you take steps to enable these features, see this support page . If you have TPM and Secure Boot already enabled feel free to give a secure server a chance, we were able to determine a reduced cheater presence on these servers a month after release.",
+      "images": [
+        "https://files.facepunch.com/ryanw/2026/September/29_11-42-QuestionableXenarthra.png"
+      ],
+      "importance": 8,
+      "interaction_potential": 9,
+      "priority": 10,
+      "publication_type": "standalone",
+      "content_type": "debate",
+      "published": false
+    },
+    {
+      "title": "Halloween Update",
+      "author": "Rin",
+      "content": "On October 22nd at 18:00BST / 13:00 EST, we'll release a mandatory server and client update to enable some spooky features! Server owners, please remember this date.",
+      "images": [
+        "https://files.facepunch.com/errn/2026/October/coffindecoration_01.jpg"
+      ],
+      "importance": 9,
+      "interaction_potential": 9,
+      "priority": 11,
+      "publication_type": "standalone",
+      "content_type": "news",
+      "published": false
+    }
+  ]
+}
