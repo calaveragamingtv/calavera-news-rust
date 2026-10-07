@@ -1,0 +1,200 @@
+{
+  "url": "https://rust.facepunch.com/news/livestock",
+  "title": "Livestock Update - News - Rust",
+  "date": "01 October 2026",
+  "type": "DEVBLOG",
+  "sections": [
+    {
+      "title": "LIVESTOCK",
+      "importance": 9,
+      "interaction_potential": 9,
+      "recommended": true,
+      "content_type": "news",
+      "reason": "Major new gameplay feature introducing cows and sheep with genetics and breeding."
+    },
+    {
+      "title": "Livestock economy",
+      "importance": 8,
+      "interaction_potential": 7,
+      "recommended": true,
+      "content_type": "news",
+      "reason": "Details the economy around selling grown animals and trading wool for resources."
+    },
+    {
+      "title": "Milk",
+      "importance": 8,
+      "interaction_potential": 8,
+      "recommended": true,
+      "content_type": "curiosity",
+      "reason": "Introduces milk, skimming for cream, and how they buff tea durations and potencies."
+    },
+    {
+      "title": "livestock fencing",
+      "importance": 5,
+      "interaction_potential": 5,
+      "recommended": false,
+      "content_type": "news",
+      "reason": "Minor deployables addition for the new livestock feature."
+    },
+    {
+      "title": "Biofuel Generator",
+      "importance": 7,
+      "interaction_potential": 7,
+      "recommended": true,
+      "content_type": "fact",
+      "reason": "Adds a new way to use raw or spoiled meat to generate low grade fuel with manual stirring."
+    },
+    {
+      "title": "Critters and Swimmers",
+      "importance": 4,
+      "interaction_potential": 4,
+      "recommended": false,
+      "content_type": "curiosity",
+      "reason": "Adds atmospheric small animals and swimmers mostly for set dressing."
+    },
+    {
+      "title": "Air wolf repairable helipad",
+      "importance": 9,
+      "interaction_potential": 9,
+      "recommended": true,
+      "content_type": "debate",
+      "reason": "Major wipe meta change requiring communal effort to repair Bandit Camp helipads for air vehicles."
+    },
+    {
+      "title": "sandbag stacking",
+      "importance": 7,
+      "interaction_potential": 6,
+      "recommended": true,
+      "content_type": "news",
+      "reason": "Reworks sandbags into a 4-stage stackable system ending in a pillbox version."
+    },
+    {
+      "title": "POWERGRID LOOT ROOMS",
+      "importance": 8,
+      "interaction_potential": 8,
+      "recommended": true,
+      "content_type": "news",
+      "reason": "Adds new locked loot rooms across many monuments powered by Heavy Fuses."
+    },
+    {
+      "title": "population decay scaling of Heavy fuses",
+      "importance": 7,
+      "interaction_potential": 6,
+      "recommended": true,
+      "content_type": "news",
+      "reason": "Quality of life change scaling heavy fuse decay based on server population and moving a fuse box."
+    },
+    {
+      "title": "Client Predicted Grenades/Explosives",
+      "importance": 8,
+      "interaction_potential": 7,
+      "recommended": true,
+      "content_type": "news",
+      "reason": "Significantly improves combat feel for throwables and explosives on higher pings via client prediction."
+    },
+    {
+      "title": "Machete refresh",
+      "importance": 3,
+      "interaction_potential": 3,
+      "recommended": false,
+      "content_type": "news",
+      "reason": "Cosmetic and model update for the old machete."
+    },
+    {
+      "title": "Country Selection UI Refresh",
+      "importance": 3,
+      "interaction_potential": 2,
+      "recommended": false,
+      "content_type": "news",
+      "reason": "UI redesign for the server browser country selection."
+    },
+    {
+      "title": "Performance - Viewmodel memory",
+      "importance": 3,
+      "interaction_potential": 2,
+      "recommended": false,
+      "content_type": "news",
+      "reason": "Under-the-hood memory optimization removing duplicate hand meshes from viewmodels."
+    },
+    {
+      "title": "New Workshop Skinnable: All Ladder Hatches",
+      "importance": 3,
+      "interaction_potential": 4,
+      "recommended": false,
+      "content_type": "news",
+      "reason": "Workshop skinning support added for all types of ladder hatches."
+    },
+    {
+      "title": "Plague Doctor Hazmat SUIT Item DLC",
+      "importance": 5,
+      "interaction_potential": 5,
+      "recommended": false,
+      "content_type": "news",
+      "reason": "New cosmetic store item release."
+    },
+    {
+      "title": "Performance - Dynamic Store Assets",
+      "importance": 3,
+      "interaction_potential": 2,
+      "recommended": false,
+      "content_type": "news",
+      "reason": "Under-the-hood optimization for in-game store memory usage."
+    },
+    {
+      "title": "Performance - Animation IK JObs",
+      "importance": 4,
+      "interaction_potential": 2,
+      "recommended": false,
+      "content_type": "news",
+      "reason": "Technical performance improvement by multithreading inverse kinematics animations."
+    },
+    {
+      "title": "Rust Render Pipeline",
+      "importance": 9,
+      "interaction_potential": 8,
+      "recommended": true,
+      "content_type": "news",
+      "reason": "Major technical milestone migrating the game from Unity's old pipeline to a custom Rust Render Pipeline."
+    },
+    {
+      "title": "Anticheat: Additional Secure Servers",
+      "importance": 8,
+      "interaction_potential": 7,
+      "recommended": true,
+      "content_type": "news",
+      "reason": "Expands TPM and Secure Boot requirements to more official servers to combat cheaters."
+    },
+    {
+      "title": "Crash uploading",
+      "importance": 3,
+      "interaction_potential": 2,
+      "recommended": false,
+      "content_type": "news",
+      "reason": "Backend enhancement for automatic crash reporting."
+    },
+    {
+      "title": "rust isles - Twitch Drops",
+      "importance": 4,
+      "interaction_potential": 5,
+      "recommended": false,
+      "content_type": "news",
+      "reason": "Reminder for active Twitch drops and event."
+    },
+    {
+      "title": "steam autumn sale",
+      "importance": 4,
+      "interaction_potential": 4,
+      "recommended": false,
+      "content_type": "news",
+      "reason": "Steam Autumn Sale discounts for Rust and its DLCs."
+    },
+    {
+      "title": "Halloween Update",
+      "importance": 6,
+      "interaction_potential": 6,
+      "recommended": true,
+      "content_type": "news",
+      "reason": "Announcement date and time for the upcoming mandatory Halloween update."
+    }
+  ]
+}
