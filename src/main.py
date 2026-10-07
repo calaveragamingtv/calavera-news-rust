@@ -1,3 +1,4 @@
+import json
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
@@ -82,6 +83,80 @@ def inspect_milk_section(url):
 
     raise RuntimeError("No se encontró la sección Milk.")
 
+def parse_news(url):
+    soup = get_page(url)
+
+    result = {
+        "url": url,
+        "title": None,
+        "date": None,
+        "type": None,
+        "sections": []
+    }
+
+    if soup.title:
+        result["title"] = soup.title.get_text(" ", strip=True)
+
+    tags = soup.select_one(".tags")
+
+    if tags:
+        tag_text = tags.get_text(" ", strip=True)
+        parts = tag_text.split()
+
+        if parts:
+            result["date"] = " ".join(parts[:3])
+
+        if "DEVBLOG" in tag_text:
+            result["type"] = "DEVBLOG"
+
+    sections = soup.select(".news-section-block")
+
+    for section in sections:
+
+        title_element = section.select_one(".section-header .title")
+
+        if not title_element:
+            continue
+
+        title = title_element.get_text(" ", strip=True)
+
+        if not title or title == "⠀":
+            continue
+
+        author_element = section.select_one(".section-header .author")
+
+        author = (
+            author_element.get_text(" ", strip=True)
+            if author_element
+            else None
+        )
+
+        content_element = section.select_one(".content")
+
+        content = (
+            content_element.get_text(" ", strip=True)
+            if content_element
+            else ""
+        )
+
+        images = []
+
+        for image in section.select(".content img"):
+
+            src = image.get("src")
+
+            if src:
+                images.append(urljoin(url, src))
+
+        result["sections"].append({
+            "title": title,
+            "author": author,
+            "content": content,
+            "images": images
+        })
+
+    return result
+
 
 def main():
 
@@ -95,9 +170,17 @@ def main():
 
     print(f"URL: {latest_url}")
 
-    print("\nAnalizando sección Milk...")
+    print("\nAnalizando noticia...")
 
-    inspect_milk_section(latest_url)
+    news = parse_news(latest_url)
+
+    print("\nResultado:")
+
+    print(json.dumps(
+        news,
+        indent=2,
+        ensure_ascii=False
+    ))
 
 
 if __name__ == "__main__":
