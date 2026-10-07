@@ -57,13 +57,13 @@
       "publication_type": "standalone",
       "content_type": "news",
       "reason": "Nuevas salas de loot bloqueadas en una gran cantidad de monumentos cambian por completo las rutas de loot y el PvP en monumentos.",
-      "published": false,
-      "published_at": null,
-      "platform": null,
+      "published": true,
+      "published_at": "2026-10-07T21:45:47.604691+00:00",
+      "platform": "x",
       "priority": 2,
-      "post_id": null,
-      "generated_text": null,
-      "generated_at": null
+      "post_id": "6ac6bd89365feab0d72f4529",
+      "generated_text": "Ahora Airfield, Launch Site y Military Tunnels tienen salas de loot bloqueadas que piden meter Heavy Fuses para activarse. ¿Vuelven los puzles de luz obligatorios o se van a armar terribles emboscadas?",
+      "generated_at": "2026-10-07T21:45:47.604691+00:00"
     },
     {
       "article_url": "https://rust.facepunch.com/news/livestock",
