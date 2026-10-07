@@ -1,4 +1,3 @@
-import json
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
@@ -12,14 +11,8 @@ HEADERS = {
 
 
 def get_page(url):
-    response = requests.get(
-        url,
-        headers=HEADERS,
-        timeout=30
-    )
-
+    response = requests.get(url, headers=HEADERS, timeout=30)
     response.raise_for_status()
-
     return BeautifulSoup(response.text, "html.parser")
 
 
@@ -38,85 +31,60 @@ def get_latest_news():
                 links.append(full_url)
 
     if not links:
-        raise RuntimeError(
-            "No se encontraron noticias en Facepunch."
-        )
+        raise RuntimeError("No se encontraron noticias en Facepunch.")
 
     return links[0]
 
 
-def parse_news(url):
+def inspect_milk_section(url):
     soup = get_page(url)
 
-    result = {
-        "url": url,
-        "title": None,
-        "date": None,
-        "type": None,
-        "sections": []
-    }
-
-    if soup.title:
-        result["title"] = soup.title.get_text(
-            " ",
-            strip=True
-        )
-
-    # Información general de la noticia
-    tags = soup.select_one(".tags")
-
-    if tags:
-        tag_text = tags.get_text(
-            " ",
-            strip=True
-        )
-
-        parts = tag_text.split()
-
-        if parts:
-            result["date"] = " ".join(parts[:3])
-
-        if "DEVBLOG" in tag_text:
-            result["type"] = "DEVBLOG"
-
-    # Secciones reales de Facepunch
     sections = soup.select(".news-section-block")
 
     for section in sections:
 
-        title_element = section.select_one(
-            ".section-header .title"
-        )
-
-        author_element = section.select_one(
-            ".section-header .author"
-        )
+        title_element = section.select_one(".section-header .title")
 
         if not title_element:
             continue
 
-        title = title_element.get_text(
-            " ",
-            strip=True
-        )
+        title = title_element.get_text(" ", strip=True)
 
-        author = None
+        if title.lower() != "milk":
+            continue
 
-        if author_element:
-            author = author_element.get_text(
-                " ",
-                strip=True
+        print("\n==============================")
+        print("        MILK SECTION")
+        print("==============================\n")
+
+        inner = section.select_one(".inner")
+
+        if not inner:
+            print("No se encontró .inner")
+            return
+
+        for child in inner.find_all(recursive=False):
+
+            text = child.get_text(" ", strip=True)
+
+            if len(text) > 300:
+                text = text[:300] + "..."
+
+            classes = " ".join(child.get("class", []))
+
+            print(
+                f"TAG: {child.name} | "
+                f"CLASS: {classes} | "
+                f"TEXT: {text}"
             )
 
-        result["sections"].append({
-            "title": title,
-            "author": author
-        })
+        return
 
-    return result
+    raise RuntimeError("No se encontró la sección Milk.")
 
 
 def main():
+
     print("================================")
     print("       RUST NEWS BOT")
     print("================================")
@@ -127,18 +95,9 @@ def main():
 
     print(f"URL: {latest_url}")
 
-    print("\nAnalizando noticia...")
+    print("\nAnalizando sección Milk...")
 
-    news = parse_news(latest_url)
-
-    print("\nResultado:")
-    print(
-        json.dumps(
-            news,
-            indent=2,
-            ensure_ascii=False
-        )
-    )
+    inspect_milk_section(latest_url)
 
 
 if __name__ == "__main__":
