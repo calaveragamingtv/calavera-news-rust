@@ -25,8 +25,8 @@ HEADERS = {
 }
 
 GEMINI_MODEL = "gemini-3.5-flash-lite"
-
 MIN_PUBLICATION_SCORE = 75
+BUFFER_CHANNEL_ID = "6a987c1f065799be4676bb2a"
 
 BASE_DIR = os.path.dirname(
     os.path.dirname(
