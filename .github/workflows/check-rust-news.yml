@@ -6,7 +6,6 @@ on:
 permissions:
   contents: write
 
-
 jobs:
   check-rust-news:
     runs-on: ubuntu-latest
@@ -25,6 +24,8 @@ jobs:
           pip install -r requirements.txt
 
       - name: Check Rust News
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           python src/main.py
 
