@@ -355,29 +355,17 @@ def save_news(news):
 
 def analyze_all_sections(news):
 
-    api_key = os.environ.get(
-        "GEMINI_API_KEY"
-    )
+    print("Analizando secciones con Gemini...")
 
-    if not api_key:
-
-        raise Exception(
-            "No existe GEMINI_API_KEY."
-        )
-
-    client = genai.Client(
-        api_key=api_key
-    )
+    sections = news["sections"]
 
     sections_text = []
 
-    for index, section in enumerate(
-        news["sections"]
-    ):
+    for index, section in enumerate(sections, start=1):
 
         sections_text.append(
             f"""
-SECCIÓN {index + 1}
+SECCIÓN {index}
 
 Título:
 {section["title"]}
@@ -390,164 +378,142 @@ Contenido:
 """
         )
 
+    article_text = "\n".join(sections_text)
+
     prompt = f"""
-Actuá como editor de contenido especializado
-en Rust y redes sociales.
+Sos un editor de contenido especializado en Rust y en comunidades de jugadores.
 
-Estamos analizando este Devblog oficial de Rust:
+Tenés que analizar un Devblog completo de Rust y decidir QUÉ partes realmente
+merecen convertirse en contenido independiente para redes sociales.
 
-Título:
-{news["title"]}
+IMPORTANTE:
+No quiero maximizar la cantidad de publicaciones.
+Quiero seleccionar solamente los cambios que realmente tienen valor para
+los jugadores y para una cuenta de contenido de Rust.
 
-Fecha:
-{news["date"]}
+DEVblog:
+Título: {news["title"]}
+Fecha: {news["date"]}
+Tipo: {news["type"]}
 
-Tipo:
-{news["type"]}
+SECCIONES:
+{article_text}
 
-Tu trabajo NO es resumir todo el Devblog.
+Para CADA sección devolvé exactamente un objeto JSON con esta estructura:
 
-Tu trabajo es decidir qué partes realmente merecen
-convertirse en contenido individual para redes sociales.
-
-Pensá como un creador de contenido de Rust.
-
-El objetivo es:
-
-- interés
-- comentarios
-- debate
-- curiosidad
-- utilidad
-- relevancia para jugadores
-- contenido que valga la pena publicar
-
-Calidad sobre cantidad.
-
-No queremos convertir cada sección del Devblog
-en un post.
-
-{''.join(sections_text)}
-
-Respondé ÚNICAMENTE con JSON válido.
-
-El JSON debe ser un array con un objeto por cada sección,
-manteniendo exactamente el mismo orden.
-
-Formato:
-
-[
-  {{
-    "title": "título original exacto",
-    "importance": 0,
-    "interaction_potential": 0,
-    "social_value": 0,
-    "publication_score": 0,
-    "recommended": true,
-    "publication_type": "standalone",
-    "content_type": "news",
-    "reason": "explicación breve en español latino"
-  }}
-]
+{{
+  "title": "título original exacto de la sección",
+  "importance": 0,
+  "interaction_potential": 0,
+  "social_value": 0,
+  "publication_score": 0,
+  "recommended": true,
+  "publication_type": "standalone",
+  "content_type": "news",
+  "reason": "explicación breve en español latinoamericano"
+}}
 
 REGLAS:
 
 1. title
-
-Debe ser exactamente el título original.
+Debe ser EXACTAMENTE el título original de la sección.
 No lo traduzcas.
+No lo cambies.
+No lo resumas.
 
 2. importance
-
 Del 1 al 10.
+¿Qué tan importante es este cambio para los jugadores de Rust?
 
-Importancia real para jugadores de Rust.
+10 = cambio enorme que afecta fuertemente al gameplay o a la experiencia.
+1 = cambio prácticamente irrelevante para un jugador común.
 
 3. interaction_potential
-
 Del 1 al 10.
 
-Potencial para generar:
-
+¿Qué tan probable es que genere:
 - comentarios
-- opiniones
 - debate
+- opiniones
 - curiosidad
+- discusiones entre jugadores
 - reacciones
 
-4. social_value
+No confundas importancia técnica con capacidad de generar conversación.
 
+4. social_value
 Del 1 al 10.
 
-Qué tan justificable es gastar una publicación
-individual en esta sección.
+Pensá como un creador de contenido de Rust.
 
-Pensá como creador de contenido,
-no como desarrollador.
+Pregunta:
+"¿Vale la pena gastar UNA publicación individual de X en esto?"
+
+No pienses como desarrollador.
+Pensá como creador.
 
 5. publication_score
-
 Del 1 al 100.
 
-Es el indicador principal.
+Este es el criterio MÁS IMPORTANTE.
 
 Respondé:
+"Si solamente pudiera publicar unas pocas cosas de este Devblog,
+¿qué tan arriba estaría esta sección?"
 
-"Si solamente pudiera publicar unas pocas cosas
-de este Devblog, ¿qué tan arriba estaría esta sección?"
-
-Considerá:
-
-- impacto
-- novedad
-- utilidad
-- curiosidad
-- conversación
-- relevancia
-- potencial de contenido
-
-No distribuyas los números artificialmente.
-
-Una sección mediocre debe tener un score bajo.
-
-Una sección excepcional puede acercarse a 100.
+Una sección puede ser importante pero NO merecer una publicación independiente.
 
 6. recommended
 
-Indica la opinión editorial del modelo.
+Debe ser true solamente cuando realmente recomendarías convertir esta
+sección en contenido.
 
-Debe ser true únicamente si realmente
-merece consideración para publicación individual.
-
-IMPORTANTE:
-
-Python utilizará publication_score como filtro final.
-
-No manipules publication_score solamente
-para hacer que recommended sea true.
+No pongas true simplemente porque el cambio sea interesante.
 
 7. publication_type
 
-Usá solamente:
+Solo existen tres valores:
 
 "standalone"
 "related"
 "skip"
 
-standalone:
-Funciona como publicación independiente.
+Usá "standalone" SOLO si la sección tiene suficiente entidad para ser
+un contenido independiente.
 
-related:
-Tiene valor pero está fuertemente relacionada
-con otra sección y debería utilizarse como
-contenido complementario.
+MUY IMPORTANTE:
 
-skip:
-No merece publicación individual.
+Si una sección forma parte natural de otro cambio más grande del mismo
+Devblog, NO debe ser standalone.
+
+Por ejemplo:
+
+Si el Devblog presenta un nuevo sistema "LIVESTOCK" y luego tiene secciones
+sobre economía, leche, animales, cercos, etc., esas secciones NO deberían
+convertirse automáticamente en publicaciones independientes.
+
+En ese caso:
+
+LIVESTOCK → standalone
+
+Cambios menores relacionados con LIVESTOCK → related
+
+Cambios sin valor suficiente → skip
+
+"related" significa:
+"Es interesante, pero sería mejor mencionarlo como parte de otro contenido
+y NO gastar una publicación independiente en esto."
+
+"standalone" significa:
+"Si publico solamente esto, el contenido sigue teniendo sentido y merece
+una publicación propia."
+
+"skip" significa:
+"No merece contenido social."
 
 8. content_type
 
-Usá solamente:
+Elegí uno:
 
 "news"
 "question"
@@ -557,109 +523,111 @@ Usá solamente:
 
 9. reason
 
-Explicación breve y natural en español latino.
+Explicá brevemente en español latinoamericano por qué tomaste la decisión.
 
-No escribas texto promocional.
+REGLA EDITORIAL PRINCIPAL:
 
-10. Calidad sobre cantidad.
+CALIDAD > CANTIDAD.
 
-Es preferible recomendar pocas secciones
-realmente buenas.
+Un Devblog NO necesita producir muchos posts.
 
-11. Evitá recomendar:
+Es perfectamente válido que de 24 secciones solamente 4, 5 o 6 sean
+realmente publicables.
 
-- cambios cosméticos menores
-- pequeños cambios de UI
-- cambios internos
-- optimizaciones técnicas irrelevantes
-- información repetitiva
-- contenido sin impacto para jugadores
+También es válido que una sección con publication_score alto sea "related"
+si su información debería formar parte de otro contenido.
 
-12. Si varias secciones hablan de la misma
-característica, considerá si deberían agruparse.
+NO conviertas automáticamente en standalone:
+- pequeños cambios
+- cambios técnicos internos
+- mejoras visuales menores
+- cambios de UI
+- cambios de rendimiento que el jugador casi no percibe
+- detalles secundarios de una feature principal
+- información repetida de otra sección
+- partes pequeñas de un sistema más grande
 
-13. Los nombres oficiales de Rust pueden
-permanecer en inglés.
+PRIORIZÁ:
 
-14. Toda explicación generada debe estar
-en español latino.
+- cambios importantes de gameplay
+- nuevas mecánicas
+- cambios que afectan estrategias
+- cambios que pueden generar debate
+- cambios que sorprenden a los jugadores
+- cambios que modifican cómo se juega Rust
+- cambios que generan preguntas o discusión
+- novedades suficientemente grandes para funcionar como publicación propia
 
-15. No generes tweets.
+REGLA SOBRE SECCIONES RELACIONADAS:
 
-Solamente analizá y clasificá.
+Antes de marcar una sección como standalone preguntate:
+
+"¿Podría publicar esto mañana como un post independiente sin repetir
+información que ya publiqué sobre otra sección?"
+
+Si la respuesta es NO → related.
+
+Si la respuesta es SÍ → puede ser standalone.
+
+IMPORTANTE:
+
+No generes tweets.
+No escribas textos para X.
+No escribas titulares nuevos.
+
+Solo analizá y clasificá las secciones.
+
+Todos los campos de texto generados por vos deben estar en español
+latinoamericano, EXCEPTO:
+- title, que debe conservarse exactamente
+- nombres oficiales de Rust
+- nombres de items, monumentos, sistemas o mecánicas que oficialmente
+  estén en inglés
+
+Devolvé ÚNICAMENTE un JSON válido con este formato:
+
+[
+  {{
+    "title": "...",
+    "importance": 0,
+    "interaction_potential": 0,
+    "social_value": 0,
+    "publication_score": 0,
+    "recommended": true,
+    "publication_type": "standalone",
+    "content_type": "news",
+    "reason": "..."
+  }}
+]
+
+No agregues markdown.
+No agregues explicaciones fuera del JSON.
 """
+
+    client = genai.Client(
+        api_key=os.environ.get("GEMINI_API_KEY")
+    )
 
     response = client.models.generate_content(
         model=GEMINI_MODEL,
-        contents=prompt
+        contents=prompt,
+        config={
+            "response_mime_type": "application/json"
+        }
     )
-
-    text = response.text.strip()
-
-    # ------------------------------------------
-    # Clean Markdown JSON fences
-    # ------------------------------------------
-
-    if text.startswith("```"):
-
-        lines = text.splitlines()
-
-        if lines and lines[0].startswith(
-            "```"
-        ):
-
-            lines = lines[1:]
-
-        if lines and lines[-1].strip() == "```":
-
-            lines = lines[:-1]
-
-        text = "\n".join(
-            lines
-        ).strip()
-
-    # ------------------------------------------
-    # Parse JSON
-    # ------------------------------------------
 
     try:
 
-        analyses = json.loads(
-            text
-        )
+        analyses = json.loads(response.text)
 
-    except json.JSONDecodeError as error:
+    except json.JSONDecodeError:
 
-        print(
-            "Respuesta de Gemini:"
-        )
+        print("ERROR: Gemini no devolvió JSON válido.")
+        print(response.text)
 
-        print(text)
-
-        raise Exception(
-            f"Gemini no devolvió JSON válido: {error}"
-        )
-
-    if not isinstance(
-        analyses,
-        list
-    ):
-
-        raise Exception(
-            "Gemini no devolvió un array de análisis."
-        )
-
-    if len(analyses) != len(
-        news["sections"]
-    ):
-
-        raise Exception(
-            "La cantidad de análisis no coincide "
-            "con la cantidad de secciones."
-        )
+        raise
 
     return analyses
-
 
 def save_analysis(
     news,
