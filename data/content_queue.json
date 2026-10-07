@@ -30,13 +30,13 @@
       "publication_type": "standalone",
       "content_type": "news",
       "reason": "La incorporación de ganadería (vacas y ovejas) es el cambio principal del parche y genera muchísimo interés y debate en la comunidad.",
-      "published": false,
-      "published_at": null,
-      "platform": null,
+      "published": true,
+      "published_at": "2026-10-07T21:38:05.755377+00:00",
+      "platform": "x",
       "priority": 1,
-      "post_id": null,
-      "generated_text": null,
-      "generated_at": null
+      "post_id": "6ac6bbbc01166a3e1c068540",
+      "generated_text": "Ahora las vacas y ovejas también tienen genética y podés buscar el god clone. ¿Granjas de animales o se quedan con las plantas?",
+      "generated_at": "2026-10-07T21:38:05.755377+00:00"
     },
     {
       "article_url": "https://rust.facepunch.com/news/livestock",
