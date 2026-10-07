@@ -23,3 +23,14 @@ jobs:
       - name: Check Rust News
         run: |
           python src/main.py
+
+      - name: Save news JSON
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add data/latest_news.json
+
+          git diff --cached --quiet || git commit -m "Update latest Rust news"
+
+          git push
