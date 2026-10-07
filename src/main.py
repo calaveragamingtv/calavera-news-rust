@@ -113,6 +113,10 @@ def parse_news(url):
         )
     )
 
+    # ---------------------------------------------------------
+    # TITLE
+    # ---------------------------------------------------------
+
     title = ""
 
     if soup.title:
@@ -120,46 +124,130 @@ def parse_news(url):
 
     if not title:
         og_title = soup.select_one('meta[property="og:title"]')
+
         if og_title:
             title = og_title.get("content", "").strip()
 
     if not title:
         h1 = soup.find("h1")
+
         if h1:
             title = h1.get_text(" ", strip=True)
 
+    # ---------------------------------------------------------
+    # DATE
+    # ---------------------------------------------------------
+
     date = ""
 
+    # 1. Buscar en <time>
     time_element = soup.find("time")
 
     if time_element:
+
         date = (
             time_element.get("datetime")
             or time_element.get_text(" ", strip=True)
         )
 
+    # 2. Buscar metadata estándar
     if not date:
-        for selector in [
+
+        date_selectors = [
             'meta[property="article:published_time"]',
+            'meta[property="article:modified_time"]',
             'meta[name="date"]',
-            'meta[itemprop="datePublished"]'
-        ]:
+            'meta[name="pubdate"]',
+            'meta[name="publishdate"]',
+            'meta[itemprop="datePublished"]',
+            'meta[itemprop="dateCreated"]'
+        ]
+
+        for selector in date_selectors:
+
             element = soup.select_one(selector)
 
             if element:
-                date = element.get("content", "").strip()
 
-                if date:
+                value = (
+                    element.get("content")
+                    or element.get("datetime")
+                    or ""
+                ).strip()
+
+                if value:
+                    date = value
                     break
+
+    # 3. Buscar fecha dentro del texto visible
+    if not date:
+
+        page_text = soup.get_text(" ", strip=True)
+
+        date_patterns = [
+            r"\b\d{1,2}\s+[A-Za-z]+\s+\d{4}\b",
+            r"\b\d{1,2}\s+[A-Za-z]{3}\s+\d{4}\b",
+            r"\b[A-Za-z]+\s+\d{1,2},\s+\d{4}\b"
+        ]
+
+        for pattern in date_patterns:
+
+            match = re.search(
+                pattern,
+                page_text,
+                re.IGNORECASE
+            )
+
+            if match:
+                date = match.group(0)
+                break
+
+    # 4. Buscar directamente en el HTML
+    if not date:
+
+        date_patterns = [
+            r"\b\d{1,2}\s+[A-Za-z]+\s+\d{4}\b",
+            r"\b\d{1,2}\s+[A-Za-z]{3}\s+\d{4}\b",
+            r"\b[A-Za-z]+\s+\d{1,2},\s+\d{4}\b"
+        ]
+
+        for pattern in date_patterns:
+
+            match = re.search(
+                pattern,
+                html,
+                re.IGNORECASE
+            )
+
+            if match:
+                date = match.group(0)
+                break
+
+    # ---------------------------------------------------------
+    # TYPE
+    # ---------------------------------------------------------
 
     news_type = ""
 
     for element in soup.find_all("a"):
+
         text = element.get_text(" ", strip=True)
 
         if text.upper() == "DEVBLOG":
+
             news_type = "DEVBLOG"
             break
+
+    if not news_type:
+
+        page_text = soup.get_text(" ", strip=True)
+
+        if "DEVBLOG" in page_text.upper():
+            news_type = "DEVBLOG"
+
+    # ---------------------------------------------------------
+    # SECTIONS
+    # ---------------------------------------------------------
 
     sections = []
 
@@ -167,12 +255,17 @@ def parse_news(url):
 
     for block in section_blocks:
 
-        title_element = block.select_one(".section-header .title")
+        title_element = block.select_one(
+            ".section-header .title"
+        )
 
         if not title_element:
             continue
 
-        section_title = title_element.get_text(" ", strip=True)
+        section_title = title_element.get_text(
+            " ",
+            strip=True
+        )
 
         if not section_title:
             continue
@@ -180,19 +273,30 @@ def parse_news(url):
         if section_title == "⠀":
             continue
 
-        author_element = block.select_one(".section-header .author")
+        author_element = block.select_one(
+            ".section-header .author"
+        )
 
         author = ""
 
         if author_element:
-            author = author_element.get_text(" ", strip=True)
+            author = author_element.get_text(
+                " ",
+                strip=True
+            )
 
-        content_element = block.select_one(".content")
+        content_element = block.select_one(
+            ".content"
+        )
 
         content = ""
 
         if content_element:
-            content = content_element.get_text("\n", strip=True)
+
+            content = content_element.get_text(
+                "\n",
+                strip=True
+            )
 
         images = []
 
@@ -203,6 +307,7 @@ def parse_news(url):
                 src = img.get("src")
 
                 if src:
+
                     images.append(
                         urljoin(BASE_URL, src)
                     )
@@ -214,6 +319,11 @@ def parse_news(url):
             "images": images
         })
 
+    print("Secciones encontradas:", len(sections))
+    print("Título detectado:", title)
+    print("Fecha detectada:", date)
+    print("Tipo detectado:", news_type)
+
     return {
         "url": url,
         "title": title,
@@ -221,7 +331,6 @@ def parse_news(url):
         "type": news_type,
         "sections": sections
     }
-
 
 def save_news(news):
 
