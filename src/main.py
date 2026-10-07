@@ -1,5 +1,7 @@
+````python
 import json
 import os
+import re
 
 import requests
 from bs4 import BeautifulSoup
@@ -82,19 +84,60 @@ def parse_news(url):
         "html.parser"
     )
 
-    # --------------------------------
-    # Article metadata
-    # --------------------------------
+    # ==========================================
+    # ARTICLE METADATA
+    # ==========================================
 
     title = ""
 
-    title_element = soup.find("h1")
+    # ------------------------------------------
+    # Title - <title>
+    # ------------------------------------------
 
-    if title_element:
-        title = title_element.get_text(
+    page_title = soup.title
+
+    if page_title:
+
+        title = page_title.get_text(
             " ",
             strip=True
         )
+
+    # ------------------------------------------
+    # Title - Open Graph
+    # ------------------------------------------
+
+    if not title:
+
+        og_title = soup.select_one(
+            'meta[property="og:title"]'
+        )
+
+        if og_title:
+
+            title = og_title.get(
+                "content",
+                ""
+            ).strip()
+
+    # ------------------------------------------
+    # Title - h1
+    # ------------------------------------------
+
+    if not title:
+
+        title_element = soup.find("h1")
+
+        if title_element:
+
+            title = title_element.get_text(
+                " ",
+                strip=True
+            )
+
+    # ------------------------------------------
+    # Date
+    # ------------------------------------------
 
     date = ""
 
@@ -110,50 +153,9 @@ def parse_news(url):
             )
         )
 
-    news_type = ""
-
-    type_candidates = [
-        ".news-type",
-        ".type",
-        ".news-header .type"
-    ]
-
-    for selector in type_candidates:
-
-        element = soup.select_one(
-            selector
-        )
-
-        if element:
-
-            news_type = element.get_text(
-                " ",
-                strip=True
-            )
-
-            break
-
-    # --------------------------------
-    # Fallbacks for metadata
-    # --------------------------------
-
-    # Facepunch puede no tener los datos
-    # exactamente en h1/time/type.
-    #
-    # Buscamos también metadata general.
-
-    if not title:
-
-        og_title = soup.select_one(
-            'meta[property="og:title"]'
-        )
-
-        if og_title:
-
-            title = og_title.get(
-                "content",
-                ""
-            ).strip()
+    # ------------------------------------------
+    # Date - metadata
+    # ------------------------------------------
 
     if not date:
 
@@ -179,9 +181,66 @@ def parse_news(url):
                 if date:
                     break
 
-    # --------------------------------
-    # Sections
-    # --------------------------------
+    # ------------------------------------------
+    # Date - text fallback
+    # ------------------------------------------
+
+    if not date:
+
+        page_text = soup.get_text(
+            " ",
+            strip=True
+        )
+
+        date_match = re.search(
+            r"\b\d{2}\s+[A-Za-z]+\s+\d{4}\b",
+            page_text
+        )
+
+        if date_match:
+
+            date = date_match.group(
+                0
+            )
+
+    # ------------------------------------------
+    # Type
+    # ------------------------------------------
+
+    news_type = ""
+
+    # Facepunch muestra DEVBLOG como texto/link.
+    for element in soup.find_all("a"):
+
+        text = element.get_text(
+            " ",
+            strip=True
+        )
+
+        if text.upper() == "DEVBLOG":
+
+            news_type = "DEVBLOG"
+
+            break
+
+    # ------------------------------------------
+    # Type - generic text fallback
+    # ------------------------------------------
+
+    if not news_type:
+
+        page_text = soup.get_text(
+            " ",
+            strip=True
+        )
+
+        if "DEVBLOG" in page_text.upper():
+
+            news_type = "DEVBLOG"
+
+    # ==========================================
+    # SECTIONS
+    # ==========================================
 
     sections = []
 
@@ -206,14 +265,20 @@ def parse_news(url):
         if not section_title:
             continue
 
+        # Facepunch utiliza este carácter
+        # como separador en algunas partes.
         if section_title == "⠀":
             continue
+
+        # --------------------------------------
+        # Author
+        # --------------------------------------
+
+        author = ""
 
         author_element = block.select_one(
             ".section-header .author"
         )
-
-        author = ""
 
         if author_element:
 
@@ -222,11 +287,15 @@ def parse_news(url):
                 strip=True
             )
 
+        # --------------------------------------
+        # Content
+        # --------------------------------------
+
+        content = ""
+
         content_element = block.select_one(
             ".content"
         )
-
-        content = ""
 
         if content_element:
 
@@ -235,11 +304,17 @@ def parse_news(url):
                 strip=True
             )
 
+        # --------------------------------------
+        # Images
+        # --------------------------------------
+
         images = []
 
         if content_element:
 
-            for img in content_element.select("img"):
+            for img in content_element.select(
+                "img"
+            ):
 
                 src = img.get("src")
 
@@ -259,6 +334,10 @@ def parse_news(url):
             "content": content,
             "images": images
         })
+
+    # ==========================================
+    # FINAL ARTICLE OBJECT
+    # ==========================================
 
     return {
         "url": url,
@@ -297,6 +376,7 @@ def analyze_all_sections(news):
     )
 
     if not api_key:
+
         raise Exception(
             "No existe GEMINI_API_KEY."
         )
@@ -458,8 +538,9 @@ merece consideración para publicación individual.
 IMPORTANTE:
 
 Python utilizará publication_score como filtro final.
-Por lo tanto, no intentes manipular el score
-solamente para hacer que recommended sea true.
+
+No manipules publication_score solamente
+para hacer que recommended sea true.
 
 7. publication_type
 
@@ -474,7 +555,8 @@ Funciona como publicación independiente.
 
 related:
 Tiene valor pero está fuertemente relacionada
-con otra sección.
+con otra sección y debería utilizarse como
+contenido complementario.
 
 skip:
 No merece publicación individual.
@@ -530,19 +612,31 @@ Solamente analizá y clasificá.
 
     text = response.text.strip()
 
+    # ------------------------------------------
+    # Clean Markdown JSON fences
+    # ------------------------------------------
+
     if text.startswith("```"):
 
         lines = text.splitlines()
 
-        if lines and lines[0].startswith("```"):
+        if lines and lines[0].startswith(
+            "```"
+        ):
+
             lines = lines[1:]
 
         if lines and lines[-1].strip() == "```":
+
             lines = lines[:-1]
 
         text = "\n".join(
             lines
         ).strip()
+
+    # ------------------------------------------
+    # Parse JSON
+    # ------------------------------------------
 
     try:
 
@@ -637,21 +731,39 @@ def create_content_queue(
             "skip"
         )
 
-        # --------------------------------
-        # Python controla la selección
-        # --------------------------------
+        # ======================================
+        # FINAL SELECTION RULES
+        # ======================================
+        #
+        # standalone:
+        #   puede ser publicación individual.
+        #
+        # related:
+        #   se conserva en el análisis pero NO
+        #   entra como publicación individual.
+        #
+        # skip:
+        #   se descarta.
+        #
 
-        if publication_type == "skip":
+        if publication_type in (
+            "skip",
+            "related"
+        ):
+
             continue
 
-        if publication_score < MIN_PUBLICATION_SCORE:
+        if publication_score < (
+            MIN_PUBLICATION_SCORE
+        ):
+
             continue
 
         queue_item = {
 
-            # --------------------------------
+            # ----------------------------------
             # Article context
-            # --------------------------------
+            # ----------------------------------
 
             "article_url": news["url"],
 
@@ -661,9 +773,9 @@ def create_content_queue(
 
             "article_type": news["type"],
 
-            # --------------------------------
+            # ----------------------------------
             # Section
-            # --------------------------------
+            # ----------------------------------
 
             "title": section["title"],
 
@@ -673,9 +785,9 @@ def create_content_queue(
 
             "images": section["images"],
 
-            # --------------------------------
+            # ----------------------------------
             # AI analysis
-            # --------------------------------
+            # ----------------------------------
 
             "importance": analysis.get(
                 "importance",
@@ -711,9 +823,9 @@ def create_content_queue(
                 ""
             ),
 
-            # --------------------------------
+            # ----------------------------------
             # Publication state
-            # --------------------------------
+            # ----------------------------------
 
             "published": False,
 
@@ -726,9 +838,9 @@ def create_content_queue(
             queue_item
         )
 
-    # --------------------------------
-    # Editorial ordering
-    # --------------------------------
+    # ==========================================
+    # SORT
+    # ==========================================
 
     queue.sort(
         key=lambda item: (
@@ -739,9 +851,9 @@ def create_content_queue(
         reverse=True
     )
 
-    # --------------------------------
-    # Deterministic priority
-    # --------------------------------
+    # ==========================================
+    # PRIORITY
+    # ==========================================
 
     for index, item in enumerate(
         queue,
@@ -749,6 +861,10 @@ def create_content_queue(
     ):
 
         item["priority"] = index
+
+    # ==========================================
+    # FINAL QUEUE OBJECT
+    # ==========================================
 
     data = {
 
@@ -760,6 +876,7 @@ def create_content_queue(
         },
 
         "selection": {
+
             "minimum_publication_score":
                 MIN_PUBLICATION_SCORE,
 
@@ -773,6 +890,10 @@ def create_content_queue(
         "items": queue
     }
 
+    # ==========================================
+    # SAVE
+    # ==========================================
+
     with open(
         "data/content_queue.json",
         "w",
@@ -785,6 +906,10 @@ def create_content_queue(
             ensure_ascii=False,
             indent=2
         )
+
+    # ==========================================
+    # LOG
+    # ==========================================
 
     print(
         f"Contenido seleccionado: {len(queue)}"
@@ -872,3 +997,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+````
