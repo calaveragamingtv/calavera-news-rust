@@ -33,7 +33,10 @@
       "published": false,
       "published_at": null,
       "platform": null,
-      "priority": 1
+      "priority": 1,
+      "post_id": null,
+      "generated_text": null,
+      "generated_at": null
     },
     {
       "article_url": "https://rust.facepunch.com/news/livestock",
@@ -57,7 +60,10 @@
       "published": false,
       "published_at": null,
       "platform": null,
-      "priority": 2
+      "priority": 2,
+      "post_id": null,
+      "generated_text": null,
+      "generated_at": null
     },
     {
       "article_url": "https://rust.facepunch.com/news/livestock",
@@ -82,7 +88,10 @@
       "published": false,
       "published_at": null,
       "platform": null,
-      "priority": 3
+      "priority": 3,
+      "post_id": null,
+      "generated_text": null,
+      "generated_at": null
     },
     {
       "article_url": "https://rust.facepunch.com/news/livestock",
@@ -106,7 +115,10 @@
       "published": false,
       "published_at": null,
       "platform": null,
-      "priority": 4
+      "priority": 4,
+      "post_id": null,
+      "generated_text": null,
+      "generated_at": null
     },
     {
       "article_url": "https://rust.facepunch.com/news/livestock",
@@ -128,7 +140,17 @@
       "published": false,
       "published_at": null,
       "platform": null,
-      "priority": 5
+      "priority": 5,
+      "post_id": null,
+      "generated_text": null,
+      "generated_at": null
     }
-  ]
+  ],
+  "general_publication": {
+    "discord_posted": false,
+    "discord_posted_at": null,
+    "x_posted": false,
+    "x_posted_at": null,
+    "x_post_id": null
+  }
 }
