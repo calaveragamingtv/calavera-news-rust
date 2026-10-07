@@ -8,7 +8,7 @@
   "selection": {
     "minimum_publication_score": 75,
     "total_sections": 24,
-    "selected_sections": 6
+    "selected_sections": 5
   },
   "items": [
     {
@@ -29,11 +29,35 @@
       "recommended": true,
       "publication_type": "standalone",
       "content_type": "news",
-      "reason": "La incorporación de vacas y ovejas con sistema de genética y reproducción es la novedad principal y más grande de este parche, perfecta para un post independiente de alto impacto.",
+      "reason": "La incorporación de ganadería (vacas y ovejas) es el cambio principal del parche y genera muchísimo interés y debate en la comunidad.",
       "published": false,
       "published_at": null,
       "platform": null,
       "priority": 1
+    },
+    {
+      "article_url": "https://rust.facepunch.com/news/livestock",
+      "article_title": "Livestock Update - News - Rust",
+      "article_date": "01 October 2026",
+      "article_type": "DEVBLOG",
+      "title": "POWERGRID LOOT ROOMS",
+      "author": "Damian Lazarski",
+      "content": "Building on the Powerplant loot room introduced in the Power Trip update, we’ve added new loot rooms to many other monuments. These rooms are locked by default and become accessible once enough Heavy Fuses have been inserted into the Powerplant to generate the required power. The number of Heavy Fuses needed to unlock each room varies, with more challenging monuments requiring more fuses than beginner-friendly ones.\nWe won’t spoil the exact locations of these new rooms, but you’ll find them at the following monuments:\nAirfield\nFerry Terminal\nHarbour 1\nHarbour 2\nFerry Terminal\nJunkyard\nLaunch Site\nMilitary Tunnels\nNuclear Missile Silo\nRadtown\nSewer Branch\nTrainyard\nWater Treatment Plant",
+      "images": [
+        "https://files.facepunch.com/kaantasan/1b3011b1/rust_lootroom_4_1080.jpg"
+      ],
+      "importance": 9,
+      "interaction_potential": 8,
+      "social_value": 9,
+      "publication_score": 85,
+      "recommended": true,
+      "publication_type": "standalone",
+      "content_type": "news",
+      "reason": "Nuevas salas de loot bloqueadas en una gran cantidad de monumentos cambian por completo las rutas de loot y el PvP en monumentos.",
+      "published": false,
+      "published_at": null,
+      "platform": null,
+      "priority": 2
     },
     {
       "article_url": "https://rust.facepunch.com/news/livestock",
@@ -47,38 +71,14 @@
         "https://files.facepunch.com/martynchapman/2026/September/30_13-24-FondNeonrainbowfish.jpg",
         "https://files.facepunch.com/kaantasan/1b2911b1/rust_nov2025update_helicopter_balance_1_1080.jpg"
       ],
-      "importance": 9,
-      "interaction_potential": 9,
-      "social_value": 9,
-      "publication_score": 90,
-      "recommended": true,
-      "publication_type": "standalone",
-      "content_type": "debate",
-      "reason": "Cambia drásticamente el meta al obligar a reparar comunitariamente el helipad de Bandit Camp para comprar vehículos al inicio del wipe.",
-      "published": false,
-      "published_at": null,
-      "platform": null,
-      "priority": 2
-    },
-    {
-      "article_url": "https://rust.facepunch.com/news/livestock",
-      "article_title": "Livestock Update - News - Rust",
-      "article_date": "01 October 2026",
-      "article_type": "DEVBLOG",
-      "title": "Anticheat: Additional Secure Servers",
-      "author": "Ryan",
-      "content": "Back in March we introduced the ability for servers to\nrequire TPM + Secure Boot\n, enabling it for 6 of our own servers.\nOver the last 6+ months we have seen security feature adoption grow at a steady pace and we're ready to switch more servers to secure, continuing with the following Facepunch servers:\n[US East] Facepunch 1\n[EA] Facepunch 1\n[EU] Facepunch 15\n[EU East] Facepunch 1\n[EU] Facepunch 16\n[EA] Facepunch 2\nOur desired goal is still to make it global for all servers in Rust, but we still have some ways to go for adoption, see adoption rates over the last 6+ months:\nIf your hardware supports it, we would strongly recommend you take steps to enable these features, see\nthis support page\n. If you have TPM and Secure Boot already enabled feel free to give a secure server a chance, we were able to determine a\nreduced cheater presence\non these servers a month after release.",
-      "images": [
-        "https://files.facepunch.com/ryanw/2026/September/29_11-42-QuestionableXenarthra.png"
-      ],
       "importance": 8,
       "interaction_potential": 9,
       "social_value": 8,
-      "publication_score": 85,
+      "publication_score": 80,
       "recommended": true,
       "publication_type": "standalone",
-      "content_type": "news",
-      "reason": "La expansión obligatoria de TPM y Secure Boot a más servidores oficiales de Facepunch para combatir tramposos genera gran interés y debate.",
+      "content_type": "debate",
+      "reason": "Modifica directamente el meta del early game y la progresión de los helicópteros en Bandit Camp, generando debate seguro entre clanes y solonis.",
       "published": false,
       "published_at": null,
       "platform": null,
@@ -89,20 +89,20 @@
       "article_title": "Livestock Update - News - Rust",
       "article_date": "01 October 2026",
       "article_type": "DEVBLOG",
-      "title": "POWERGRID LOOT ROOMS",
-      "author": "Damian Lazarski",
-      "content": "Building on the Powerplant loot room introduced in the Power Trip update, we’ve added new loot rooms to many other monuments. These rooms are locked by default and become accessible once enough Heavy Fuses have been inserted into the Powerplant to generate the required power. The number of Heavy Fuses needed to unlock each room varies, with more challenging monuments requiring more fuses than beginner-friendly ones.\nWe won’t spoil the exact locations of these new rooms, but you’ll find them at the following monuments:\nAirfield\nFerry Terminal\nHarbour 1\nHarbour 2\nFerry Terminal\nJunkyard\nLaunch Site\nMilitary Tunnels\nNuclear Missile Silo\nRadtown\nSewer Branch\nTrainyard\nWater Treatment Plant",
+      "title": "Rust Render Pipeline",
+      "author": "Aidan Murray",
+      "content": "Because Rust has been around for so long, we were still using Unity’s old Built-in Render Pipeline, which has worked for the most part but has been very limiting in the optimisations we can apply and the effects we can render.\nWe have now migrated to the new Rust Render Pipeline, which is a custom Scriptable Render Pipeline made specifically for Rust by our graphics team. This gives us a lot more control over the rendering of Rust as a whole. This wasn’t easy, as we had to remake almost every effect in the game to work with this new pipeline.\nThe main benefit of this will be performance. At first, you should see slightly better performance in most areas of the game, as the new pipeline comes with less overhead. However, this is just the beginning. Our initial goal was to get this pipeline working in tandem with the original pipeline to ensure everything worked correctly and that we could still switch between them at runtime. Once we have fully transitioned, we will be able to optimise this pipeline further, meaning there will be more performance gains in the near future. We also have plans for improving the quality of graphics in the game where we weren’t previously able to do due to the old pipeline.\nThe Rust Render Pipeline can be toggled via a setting under the experimental tab so players can switch back and forth between pipelines in case there are any issues initially. This setting is only going to be here for the first month in case anyone encounters graphical or performance issues that we missed while testing. Hopefully, after the next patch, we’ll be able to remove this fully and have RRP as the default once we know that no serious issues remain.",
       "images": [
-        "https://files.facepunch.com/kaantasan/1b3011b1/rust_lootroom_4_1080.jpg"
+        "https://files.facepunch.com/kaantasan/1b3011b1/oct2026_rrp_rust_render_pipeline_1_1080.jpg"
       ],
       "importance": 8,
       "interaction_potential": 8,
       "social_value": 8,
-      "publication_score": 85,
+      "publication_score": 75,
       "recommended": true,
       "publication_type": "standalone",
       "content_type": "news",
-      "reason": "La incorporación de nuevas loot rooms en una enorme cantidad de monumentos requiere Heavy Fuses, lo que modifica las rutas de loot y PvP.",
+      "reason": "La migración al nuevo pipeline de renderizado gráfico propio de Rust es un cambio técnico mayor que promete mejorar el rendimiento general.",
       "published": false,
       "published_at": null,
       "platform": null,
@@ -118,41 +118,17 @@
       "content": "Grenades/C4/Satchels in Rust are server-sided. This means when you left-click, your client will tell the server that it has to spawn the grenade or c4, etc and then we have to wait for the server to do so. With higher ping, this can feel like a substantial wait.\nWe are now introducing some client prediction when you use a grenade/c4/satchel. This means that throwing these items will now feel way smoother (especially on higher pings) as your local client will simulate what will happen on the server before the server has to tell us, but don't worry: if there are any discrepancies, your client will be corrected. This shouldn't happen too often, but it will kick in when it needs to.",
       "images": [],
       "importance": 8,
-      "interaction_potential": 8,
+      "interaction_potential": 7,
       "social_value": 8,
-      "publication_score": 85,
+      "publication_score": 75,
       "recommended": true,
       "publication_type": "standalone",
       "content_type": "news",
-      "reason": "Mejora crucial de calidad de vida (QoL) para el combate al añadir predicción de cliente en explosivos y granades.",
+      "reason": "Mejora sustancial en la respuesta al lanzar explosivos y granidades, algo muy celebrado por los jugadores competitivos.",
       "published": false,
       "published_at": null,
       "platform": null,
       "priority": 5
-    },
-    {
-      "article_url": "https://rust.facepunch.com/news/livestock",
-      "article_title": "Livestock Update - News - Rust",
-      "article_date": "01 October 2026",
-      "article_type": "DEVBLOG",
-      "title": "Biofuel Generator",
-      "author": "Ian Henderson",
-      "content": "A way to finally make use of raw or spoiled meat. The Biofuel Generator converts organic matter to low grade, but it must be stirred by hand!\nYou can fill it up, stir it and let it process. It will take around 30~ minutes before you'll have to stir again, but don't worry - you can hook up some IO to let you know it needs stirring even when you're in the next room.\nThe amount of low grade you're given depends on the type of organic matter you put in, those with a larger calorific value will give you more low grade.",
-      "images": [
-        "https://files.facepunch.com/kaantasan/1b2911b1/oct2026_Biofuel_Generator_deployable_1_1080.jpg"
-      ],
-      "importance": 8,
-      "interaction_potential": 8,
-      "social_value": 8,
-      "publication_score": 80,
-      "recommended": true,
-      "publication_type": "standalone",
-      "content_type": "news",
-      "reason": "Un generador que procesa carne podrida o cruda para dar low grade con alertas de IO es una mecánica de supervivencia muy atractiva y con valor propio.",
-      "published": false,
-      "published_at": null,
-      "platform": null,
-      "priority": 6
     }
   ]
 }
