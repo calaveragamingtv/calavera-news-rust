@@ -1,3 +1,4 @@
+import os
 import json
 import requests
 from bs4 import BeautifulSoup
@@ -157,6 +158,17 @@ def parse_news(url):
 
     return result
 
+def save_news(news):
+    os.makedirs("data", exist_ok=True)
+
+    with open("data/latest_news.json", "w", encoding="utf-8") as file:
+        json.dump(
+            news,
+            file,
+            indent=2,
+            ensure_ascii=False
+        )
+
 
 def main():
 
@@ -173,6 +185,7 @@ def main():
     print("\nAnalizando noticia...")
 
     news = parse_news(latest_url)
+    save_news(news)
 
     print("\nResultado:")
 
