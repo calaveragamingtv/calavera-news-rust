@@ -17,48 +17,83 @@ HEADERS = {
 
 
 def get_page(url):
-    response = requests.get(url, headers=HEADERS, timeout=30)
+    response = requests.get(
+        url,
+        headers=HEADERS,
+        timeout=30
+    )
+
     response.raise_for_status()
+
     return response.text
 
 
 def get_latest_news():
     html = get_page(NEWS_URL)
+
     soup = BeautifulSoup(html, "html.parser")
 
-    link = soup.select_one("a.news-item")
+    # Facepunch muestra las noticias dentro de los bloques
+    # de noticias de la página principal.
+    news_links = soup.select("a[href*='/news/']")
 
-    if not link:
-        raise Exception("No se pudo encontrar la última noticia.")
+    for link in news_links:
 
-    href = link.get("href")
+        href = link.get("href")
 
-    if not href:
-        raise Exception("La noticia no tiene URL.")
+        if not href:
+            continue
 
-    return urljoin(BASE_URL, href)
+        href = href.strip()
+
+        if href == "/news/":
+            continue
+
+        if not href.startswith("/news/"):
+            continue
+
+        # Evitamos URLs que no sean artículos concretos.
+        if href.count("/") < 2:
+            continue
+
+        return urljoin(BASE_URL, href)
+
+    raise Exception("No se pudo encontrar la última noticia.")
 
 
 def parse_news(url):
     html = get_page(url)
+
     soup = BeautifulSoup(html, "html.parser")
 
+    title = ""
+
     title_element = soup.select_one("h1")
-    title = title_element.get_text(" ", strip=True) if title_element else ""
+
+    if title_element:
+        title = title_element.get_text(" ", strip=True)
 
     date = ""
+
     date_element = soup.select_one("time")
 
     if date_element:
         date = date_element.get_text(" ", strip=True)
 
-    type_element = soup.select_one(".news-type")
+    news_type = "DEVBLOG"
 
-    news_type = (
-        type_element.get_text(" ", strip=True)
-        if type_element
-        else "DEVBLOG"
+    # Buscar el tipo de noticia si existe.
+    type_candidates = soup.select(
+        ".news-type, .type, .news-header .type"
     )
+
+    for element in type_candidates:
+
+        value = element.get_text(" ", strip=True)
+
+        if value:
+            news_type = value
+            break
 
     sections = []
 
@@ -74,33 +109,51 @@ def parse_news(url):
         if not title_element:
             continue
 
-        section_title = title_element.get_text(" ", strip=True)
+        section_title = title_element.get_text(
+            " ",
+            strip=True
+        )
 
-        if not section_title or section_title == "⠀":
+        # Facepunch puede tener títulos vacíos o caracteres
+        # especiales utilizados como separadores.
+        if not section_title:
+            continue
+
+        if section_title == "⠀":
             continue
 
         author_element = header.select_one(".author")
 
-        author = (
-            author_element.get_text(" ", strip=True)
-            if author_element
-            else ""
-        )
+        author = ""
+
+        if author_element:
+            author = author_element.get_text(
+                " ",
+                strip=True
+            )
 
         content_element = block.select_one(".content")
 
         if not content_element:
             continue
 
-        content = content_element.get_text(" ", strip=True)
+        content = content_element.get_text(
+            " ",
+            strip=True
+        )
 
         images = []
 
         for image in content_element.select("img"):
+
             src = image.get("src")
 
-            if src:
-                images.append(urljoin(BASE_URL, src))
+            if not src:
+                continue
+
+            images.append(
+                urljoin(BASE_URL, src)
+            )
 
         sections.append({
             "title": section_title,
@@ -119,6 +172,7 @@ def parse_news(url):
 
 
 def save_news(news):
+
     os.makedirs("data", exist_ok=True)
 
     with open(
@@ -126,6 +180,7 @@ def save_news(news):
         "w",
         encoding="utf-8"
     ) as file:
+
         json.dump(
             news,
             file,
@@ -133,21 +188,32 @@ def save_news(news):
             indent=2
         )
 
-    print("Noticia guardada en data/latest_news.json")
+    print(
+        "Noticia guardada en data/latest_news.json"
+    )
 
 
 def analyze_all_sections(news):
 
-    api_key = os.environ.get("GEMINI_API_KEY")
+    api_key = os.environ.get(
+        "GEMINI_API_KEY"
+    )
 
     if not api_key:
-        raise Exception("No se encontró GEMINI_API_KEY.")
+        raise Exception(
+            "No se encontró GEMINI_API_KEY."
+        )
 
-    client = genai.Client(api_key=api_key)
+    client = genai.Client(
+        api_key=api_key
+    )
 
     sections_text = ""
 
-    for index, section in enumerate(news["sections"], start=1):
+    for index, section in enumerate(
+        news["sections"],
+        start=1
+    ):
 
         sections_text += f"""
 SECTION {index}
@@ -165,7 +231,8 @@ Content:
 """
 
     prompt = f"""
-You are analyzing a Rust Facepunch devblog for a Spanish-speaking Rust content creator.
+You are analyzing a Rust Facepunch devblog for a
+Spanish-speaking Rust content creator.
 
 ARTICLE:
 {news["title"]}
@@ -176,30 +243,33 @@ DATE:
 TYPE:
 {news["type"]}
 
-Your task is to analyze ALL sections and determine which ones deserve
-individual social media content.
+Your task is to analyze ALL sections and determine which
+ones deserve individual social media content.
 
 IMPORTANT LANGUAGE RULE:
 
-The ORIGINAL section titles and source information must remain unchanged.
+The ORIGINAL section titles and source information must
+remain unchanged.
 
-However, ALL AI-GENERATED TEXT must be written in natural Latin American Spanish.
+ALL AI-GENERATED TEXT MUST BE IN NATURAL LATIN AMERICAN SPANISH.
 
 This includes:
 - reasons
 - explanations
 - future tweet ideas
-- future Discord content
+- Discord content
 - any other generated text
 
 DO NOT generate final social media text in English.
 
-Use natural Latin American Spanish, not literal or robotic translations.
+Do not use robotic or literal translations.
 
-Rust item names, monument names, mechanics, systems and official terminology
-may remain in English when that is the official name used by the game.
+Use natural Latin American Spanish suitable for a Rust
+gaming community.
 
-For every section return exactly one analysis object.
+Rust item names, monument names, mechanics, systems and
+official terminology may remain in English when that is
+the official name used by the game.
 
 Return ONLY valid JSON.
 
@@ -207,7 +277,7 @@ Do not use markdown.
 Do not use ```json.
 Do not add explanations outside the JSON.
 
-The JSON must have exactly this structure:
+Return exactly this structure:
 
 {{
   "sections": [
@@ -226,66 +296,81 @@ The JSON must have exactly this structure:
 
 RULES:
 
-1. "title"
-   - Must be EXACTLY the original section title.
-   - Do not translate it.
+1. title
 
-2. "importance"
-   - Integer from 1 to 10.
-   - Measures how important the information is for Rust players.
+Must be EXACTLY the original section title.
 
-3. "interaction_potential"
-   - Integer from 1 to 10.
-   - Measures how likely the topic is to generate comments, discussion,
-     reactions or interest on social media.
+Do not translate it.
 
-4. "recommended"
-   - true only if the section deserves individual social media content.
-   - false for minor, repetitive, purely technical or low-interest information.
+2. importance
 
-5. "priority"
-   - Integer starting at 1.
-   - 1 is the MOST important section to publish.
-   - Higher numbers mean lower priority.
-   - Recommended sections should receive the highest priorities.
-   - Non-recommended sections should receive the lowest priorities.
-   - Every section must have a unique priority.
+Integer from 1 to 10.
 
-6. "publication_type"
-   Must be exactly one of:
-   - "standalone"
-   - "related"
-   - "skip"
+Measures how important the information is for Rust players.
 
-   "standalone":
-   The section deserves its own independent social media post.
+3. interaction_potential
 
-   "related":
-   The section is interesting but is strongly related to another major section
-   and may work better combined with it rather than as an independent post.
+Integer from 1 to 10.
 
-   "skip":
-   The section should not generate social media content.
+Measures how likely the topic is to generate comments,
+discussion, reactions or interest on social media.
 
-7. "content_type"
-   Must be exactly one of:
-   - "news"
-   - "question"
-   - "debate"
-   - "fact"
-   - "curiosity"
+4. recommended
 
-8. "reason"
-   - Short explanation in natural Latin American Spanish.
-   - Explain why the section does or does not deserve content.
+true only if the section deserves individual social
+media content.
 
-IMPORTANT:
-
-Compare the sections against each other.
+false for minor, repetitive, purely technical or
+low-interest information.
 
 Do NOT mark everything as recommended.
 
-The goal is to identify the strongest content from the entire article.
+5. priority
+
+Every section must receive a unique integer priority.
+
+1 = highest priority.
+
+Higher numbers = lower priority.
+
+The strongest and most interesting topics must receive
+the lowest priority numbers.
+
+6. publication_type
+
+Must be exactly one of:
+
+"standalone"
+"related"
+"skip"
+
+standalone:
+The section deserves its own independent social media post.
+
+related:
+The section is interesting but is strongly related to
+another major section and may work better combined with it.
+
+skip:
+The section should not generate social media content.
+
+7. content_type
+
+Must be exactly one of:
+
+"news"
+"question"
+"debate"
+"fact"
+"curiosity"
+
+8. reason
+
+Short explanation in natural Latin American Spanish.
+
+Explain why the section does or does not deserve content.
+
+Compare all sections against each other.
 
 Prioritize:
 
@@ -296,8 +381,8 @@ Prioritize:
 - controversial changes
 - useful information for players
 - surprising mechanics
-- information that creates discussion
-- information that can generate strong Rust community reactions
+- discussion potential
+- topics that can generate strong Rust community reactions
 
 Normally do NOT recommend:
 
@@ -309,17 +394,19 @@ Normally do NOT recommend:
 - repetitive information
 - low-impact details
 
-Avoid creating multiple independent posts about essentially the same topic.
+Avoid creating multiple independent posts about
+essentially the same topic.
 
-For example, if several sections explain different aspects of one major feature,
-the main feature can be "standalone" while related details can be "related".
+If several sections describe different aspects of one
+major feature, the main feature can be "standalone"
+while secondary details can be "related".
 
 The eventual social media strategy is:
 
+- publish the strongest content first
 - one strong piece of content at a time
-- prioritize the most interesting topics first
 - avoid repetitive posts
-- eventually publish remaining worthwhile sections on subsequent days
+- use remaining worthwhile sections on subsequent days
 - stop when there is no worthwhile content remaining
 
 Here are ALL sections:
@@ -329,50 +416,80 @@ Here are ALL sections:
 
     max_retries = 3
 
-    for attempt in range(1, max_retries + 1):
+    for attempt in range(
+        1,
+        max_retries + 1
+    ):
 
         try:
 
-            print("Enviando todas las secciones a Gemini...")
+            print(
+                "Enviando todas las secciones a Gemini..."
+            )
 
             response = client.models.generate_content(
                 model="gemini-3.5-flash-lite",
                 contents=prompt
             )
 
-            print("Respuesta recibida de Gemini.")
+            print(
+                "Respuesta recibida de Gemini."
+            )
 
-            result = json.loads(response.text)
+            result = json.loads(
+                response.text
+            )
 
-            analyses = result.get("sections")
+            analyses = result.get(
+                "sections"
+            )
 
-            if not isinstance(analyses, list):
+            if not isinstance(
+                analyses,
+                list
+            ):
                 raise Exception(
                     "Gemini no devolvió una lista válida de secciones."
                 )
 
-            if len(analyses) != len(news["sections"]):
+            if len(analyses) != len(
+                news["sections"]
+            ):
                 raise Exception(
-                    f"Gemini devolvió {len(analyses)} análisis "
-                    f"pero deberían ser {len(news['sections'])}."
+                    f"Gemini devolvió {len(analyses)} "
+                    f"análisis pero deberían ser "
+                    f"{len(news['sections'])}."
                 )
 
             return analyses
 
         except Exception as error:
 
-            print(f"Error con Gemini: {error}")
+            print(
+                f"Error con Gemini: {error}"
+            )
 
             if attempt < max_retries:
-                print("Esperando 30 segundos antes de reintentar...")
+
+                print(
+                    "Esperando 30 segundos antes de reintentar..."
+                )
+
                 time.sleep(30)
+
             else:
                 raise
 
 
-def save_analysis(news, analyses):
+def save_analysis(
+    news,
+    analyses
+):
 
-    os.makedirs("data", exist_ok=True)
+    os.makedirs(
+        "data",
+        exist_ok=True
+    )
 
     analysis_data = {
         "url": news["url"],
@@ -387,6 +504,7 @@ def save_analysis(news, analyses):
         "w",
         encoding="utf-8"
     ) as file:
+
         json.dump(
             analysis_data,
             file,
@@ -394,19 +512,32 @@ def save_analysis(news, analyses):
             indent=2
         )
 
-    print("Análisis guardado en data/news_analysis.json")
+    print(
+        "Análisis guardado en data/news_analysis.json"
+    )
 
 
-def create_content_queue(news, analyses):
+def create_content_queue(
+    news,
+    analyses
+):
 
     queue = []
 
     for analysis in analyses:
 
-        if not analysis.get("recommended"):
+        if not analysis.get(
+            "recommended",
+            False
+        ):
             continue
 
-        if analysis.get("publication_type") == "skip":
+        publication_type = analysis.get(
+            "publication_type",
+            "skip"
+        )
+
+        if publication_type == "skip":
             continue
 
         section = next(
@@ -426,15 +557,29 @@ def create_content_queue(news, analyses):
             "author": section["author"],
             "content": section["content"],
             "images": section["images"],
-            "importance": analysis["importance"],
-            "interaction_potential": analysis["interaction_potential"],
-            "priority": analysis["priority"],
-            "publication_type": analysis["publication_type"],
-            "content_type": analysis["content_type"],
+            "importance": analysis.get(
+                "importance",
+                0
+            ),
+            "interaction_potential": analysis.get(
+                "interaction_potential",
+                0
+            ),
+            "priority": analysis.get(
+                "priority",
+                999
+            ),
+            "publication_type": publication_type,
+            "content_type": analysis.get(
+                "content_type",
+                "news"
+            ),
             "published": False
         })
 
-    queue.sort(key=lambda item: item["priority"])
+    queue.sort(
+        key=lambda item: item["priority"]
+    )
 
     queue_data = {
         "url": news["url"],
@@ -449,6 +594,7 @@ def create_content_queue(news, analyses):
         "w",
         encoding="utf-8"
     ) as file:
+
         json.dump(
             queue_data,
             file,
@@ -456,8 +602,14 @@ def create_content_queue(news, analyses):
             indent=2
         )
 
-    print("Cola guardada en data/content_queue.json")
-    print(f"Se encontraron {len(queue)} contenidos recomendados.")
+    print(
+        "Cola guardada en data/content_queue.json"
+    )
+
+    print(
+        f"Se encontraron {len(queue)} "
+        f"contenidos recomendados."
+    )
 
 
 def main():
@@ -466,36 +618,58 @@ def main():
     print("       RUST NEWS BOT")
     print("================================")
 
-    print("Buscando última noticia...")
+    print(
+        "Buscando última noticia..."
+    )
 
     latest_url = get_latest_news()
 
-    print(f"URL: {latest_url}")
-
-    print("Analizando noticia...")
-
-    news = parse_news(latest_url)
-
-    save_news(news)
-
     print(
-        f"Se encontraron {len(news['sections'])} secciones."
+        f"URL: {latest_url}"
     )
 
-    print("Analizando todas las secciones con Gemini...")
+    print(
+        "Analizando noticia..."
+    )
 
-    analyses = analyze_all_sections(news)
+    news = parse_news(
+        latest_url
+    )
 
-    save_analysis(news, analyses)
+    save_news(
+        news
+    )
 
-    create_content_queue(news, analyses)
+    print(
+        f"Se encontraron "
+        f"{len(news['sections'])} secciones."
+    )
+
+    print(
+        "Analizando todas las secciones con Gemini..."
+    )
+
+    analyses = analyze_all_sections(
+        news
+    )
+
+    save_analysis(
+        news,
+        analyses
+    )
+
+    create_content_queue(
+        news,
+        analyses
+    )
 
     print("================================")
     print("      ANALISIS COMPLETADO")
     print("================================")
 
     print(
-        f"Se analizaron {len(analyses)} secciones."
+        f"Se analizaron "
+        f"{len(analyses)} secciones."
     )
 
 
