@@ -2,12 +2,12 @@
   "url": "https://rust.facepunch.com/news/livestock",
   "title": "",
   "date": "",
-  "type": "DEVBLOG",
+  "type": "",
   "sections": [
     {
       "title": "LIVESTOCK",
       "author": "Maverick",
-      "content": "This patch we are introducing cows and sheep. What resources can THEY GIVE? Both produce dung , cows produce milk, and sheep produce wool . They can also be harvested for meat, bones and leather like any other animal. Additionally, you can sell a grown animal to an NPC in the ranch. How to set up a farm? There are multiple ways to capture wild livestock, some more efficient than others, but they should all be pretty intuitive. When the new navmesh is enabled, NPCs can enter player structures and respect doors opening/closing, so the sky is the limit. Like plants, they have genetics and needs, and can be bred to hunt for a god clone. However, the genes won't behave exactly like plants, so old techniques may not apply. WILL IT TANK PERFORMANCE? Each game frame, only a subset of the NPCs are processed, up to a hardcoded max time per frame. So when we increase the population, the server doesn't directly lose FPS, instead NPCs just become slower to react because we distribute the load across frames automatically when over budget. We still spent time multithreading and optimising the new navigation system, at least doubling its performance since the last patch. As usual, we'll be monitoring server performance and fixing problems as they appear.",
+      "content": "This patch we are introducing cows and sheep.\nWhat resources can THEY GIVE?\nBoth produce\ndung\n, cows produce\nmilk,\nand sheep produce\nwool\n.\nThey can also be harvested for meat, bones and leather like any other animal.\nAdditionally, you can sell a grown animal to an NPC in the ranch.\nHow to set up a farm?\nThere are multiple ways to capture wild livestock, some more efficient than others, but they should all be pretty intuitive.\nWhen the new navmesh is enabled,\nNPCs can enter player structures\nand respect doors opening/closing, so the sky is the limit.\nLike plants, they have\ngenetics\nand needs, and can be bred to hunt for a god clone.\nHowever, the genes won't behave exactly like plants, so old techniques may not apply.\nWILL IT TANK PERFORMANCE?\nEach game frame, only a subset of the NPCs are processed, up to a hardcoded max time per frame.\nSo when we increase the population, the server doesn't directly lose FPS, instead NPCs just become slower to react because we distribute the load across frames automatically when over budget.\nWe still spent time multithreading and optimising the new navigation system, at least doubling its performance since the last patch.\nAs usual, we'll be monitoring server performance and fixing problems as they appear.",
       "images": [
         "https://files.facepunch.com/kaantasan/1b3011b1/oct2026_livestock_animals_cows_sheep_2_1080%20%281%29.jpg"
       ]
@@ -15,7 +15,7 @@
     {
       "title": "Livestock economy",
       "author": "Jarryd Campi",
-      "content": "Growing and caring for your livestock will allow you to access some new resources and rewards. Grown Cattle and Sheep can be sold at a Stable for a variety of resources. Simply lead your animal to the Stables and speak to the new vendor outside, where you will receive a randomized offer based on the gene quality of the animal. You can reject the offer and get another two more times, at which point the vendor will get annoyed and won't want to buy the animal for 15 minutes. Wool can be harvested from Sheep and traded in to the same vendor, where you will get up the three offers just like when you sell animals. In this case the rewards offered will be based on how much wool you bring in the one go - the maximum being 400. High risk, high reward.",
+      "content": "Growing and caring for your livestock will allow you to access some new resources and rewards.\nGrown Cattle and Sheep can be sold at a Stable for a variety of resources. Simply lead your animal to the Stables and speak to the new vendor outside, where you will receive a randomized offer based on the gene quality of the animal. You can reject the offer and get another two more times, at which point the vendor will get annoyed and won't want to buy the animal for 15 minutes.\nWool can be harvested from Sheep and traded in to the same vendor, where you will get up the three offers just like when you sell animals. In this case the rewards offered will be based on how much wool you bring in the one go - the maximum being 400. High risk, high reward.",
       "images": [
         "https://files.facepunch.com/kaantasan/1b2411b1/rust_livestock_auctions_3_1080.jpg"
       ]
@@ -23,7 +23,7 @@
     {
       "title": "Milk",
       "author": "Jarryd Campi",
-      "content": "Cows give you access to a new resource - milk. It can be consumed as is, but if you refrigerate it for 4 hours, you will gain a new option to skim the milk. Skimming the milk will give you two items - Skimmed Milk and Cream. Cream is a more powerful consumable. Milk and Cream can also be used in a variety of crafting recipes. Milk will generally increase the duration of tea effects, while Cream can be used to increase the potency of those effects.",
+      "content": "Cows give you access to a new resource - milk. It can be consumed as is, but if you refrigerate it for 4 hours, you will gain a new option to skim the milk. Skimming the milk will give you two items - Skimmed Milk and Cream. Cream is a more powerful consumable.\nMilk and Cream can also be used in a variety of crafting recipes. Milk will generally increase the duration of tea effects, while Cream can be used to increase the potency of those effects.",
       "images": [
         "https://files.facepunch.com/kaantasan/1b3011b1/rust_milk_3_1080_jpg.png"
       ]
@@ -39,7 +39,7 @@
     {
       "title": "Biofuel Generator",
       "author": "Ian Henderson",
-      "content": "A way to finally make use of raw or spoiled meat. The Biofuel Generator converts organic matter to low grade, but it must be stirred by hand! You can fill it up, stir it and let it process. It will take around 30~ minutes before you'll have to stir again, but don't worry - you can hook up some IO to let you know it needs stirring even when you're in the next room. The amount of low grade you're given depends on the type of organic matter you put in, those with a larger calorific value will give you more low grade.",
+      "content": "A way to finally make use of raw or spoiled meat. The Biofuel Generator converts organic matter to low grade, but it must be stirred by hand!\nYou can fill it up, stir it and let it process. It will take around 30~ minutes before you'll have to stir again, but don't worry - you can hook up some IO to let you know it needs stirring even when you're in the next room.\nThe amount of low grade you're given depends on the type of organic matter you put in, those with a larger calorific value will give you more low grade.",
       "images": [
         "https://files.facepunch.com/kaantasan/1b2911b1/oct2026_Biofuel_Generator_deployable_1_1080.jpg"
       ]
@@ -47,7 +47,7 @@
     {
       "title": "Critters and Swimmers",
       "author": "ElliotH",
-      "content": "Alongside the livestock, we are bringing in some smaller animals to make the world feel more alive! Frogs, Rabbits, Squirrels, Sea turtles, Crabs, and Jellyfish will all be appearing around the island in the biomes that suit them. Performance The critters are heavily budgeted and have dedicated behaviours to ensure they don't take up any more server (and client) performance than strictly necessary. For now, they are mostly set dressing, and their performance limits are set with that in mind.",
+      "content": "Alongside the livestock, we are bringing in some smaller animals to make the world feel more alive! Frogs, Rabbits, Squirrels, Sea turtles, Crabs, and Jellyfish will all be appearing around the island in the biomes that suit them.\nPerformance\nThe critters are heavily budgeted and have dedicated behaviours to ensure they don't take up any more server (and client) performance than strictly necessary. For now, they are mostly set dressing, and their performance limits are set with that in mind.",
       "images": [
         "https://files.facepunch.com/kaantasan/1b2911b1/rust_squirrel_2_1080.jpg",
         "https://files.facepunch.com/kaantasan/1b3011b1/oct2026_Decorativel_animals_frogs_3_1080.jpg",
@@ -57,7 +57,7 @@
     {
       "title": "Air wolf repairable helipad",
       "author": "Martyn Chapman",
-      "content": "At the start of the wipe the Air Wolf helipad in Bandit Camp will now be in a state of disrepair. The air vehicle vendor NPC will refuse to sell vehicles to anyone until the helipad is repaired. Repairing the helipad is a process similar to constructing siege weapons - a certain amount of resources are required and you can transfer resources from your inventory by bashing the helipad with a hammer. Once the helipad is repaired it stays repaired for the duration of the wipe. The intention is that repairing the helipad requires a communal effort and air vehicles purchased from this vendor should no longer start spawning too quickly into the start of the wipe. If a clan wishes to get quick access to air vehicles they are required to invest a significant amount of resources to do so and they are also opening up access to the vendor to everyone else on the server. Server admins can change this behaviour via convars vehicle.padrepairsrequired (if false this change is effectively reverted) and vehicle.setrepairablepads (force helipad into fully disrepaired/repaired state with 0/1)",
+      "content": "At the start of the wipe the Air Wolf helipad in Bandit Camp will now be in a state of disrepair. The air vehicle vendor NPC will refuse to sell vehicles to anyone until the helipad is repaired.\nRepairing the helipad is a process similar to constructing siege weapons - a certain amount of resources are required and you can transfer resources from your inventory by bashing the helipad with a hammer. Once the helipad is repaired it stays repaired for the duration of the wipe.\nThe intention is that repairing the helipad requires a communal effort and air vehicles purchased from this vendor should no longer start spawning too quickly into the start of the wipe. If a clan wishes to get quick access to air vehicles they are required to invest a significant amount of resources to do so and they are also opening up access to the vendor to everyone else on the server.\nServer admins can change this behaviour via convars\nvehicle.padrepairsrequired\n(if false this change is effectively reverted) and\nvehicle.setrepairablepads\n(force helipad into fully disrepaired/repaired state with 0/1)",
       "images": [
         "https://files.facepunch.com/martynchapman/2026/September/30_13-24-FondNeonrainbowfish.jpg",
         "https://files.facepunch.com/kaantasan/1b2911b1/rust_nov2025update_helicopter_balance_1_1080.jpg"
@@ -66,13 +66,13 @@
     {
       "title": "sandbag stacking",
       "author": "Adam W",
-      "content": "Sandbags have been reworked. They now have four stages, and each stage is upgraded to the next by stacking another sandbag deployable on top. Each stage grows taller, with the final stage being a pillbox version. All Sandbag skins are supported across all variations. The crating cost of the sandbag deployable has been reduced to account for needing to stack more of them. When found in loot, Sandbag Barricades will now be a stack of 4. We've also increased the total stack size to 20.",
+      "content": "Sandbags have been reworked. They now have four stages, and each stage is upgraded to the next by stacking another sandbag deployable on top. Each stage grows taller, with the final stage being a pillbox version. All Sandbag skins are supported across all variations.\nThe crating cost of the sandbag deployable has been reduced to account for needing to stack more of them. When found in loot, Sandbag Barricades will now be a stack of 4. We've also increased the total stack size to 20.",
       "images": []
     },
     {
       "title": "POWERGRID LOOT ROOMS",
       "author": "Damian Lazarski",
-      "content": "Building on the Powerplant loot room introduced in the Power Trip update, we’ve added new loot rooms to many other monuments. These rooms are locked by default and become accessible once enough Heavy Fuses have been inserted into the Powerplant to generate the required power. The number of Heavy Fuses needed to unlock each room varies, with more challenging monuments requiring more fuses than beginner-friendly ones. We won’t spoil the exact locations of these new rooms, but you’ll find them at the following monuments: Airfield Ferry Terminal Harbour 1 Harbour 2 Ferry Terminal Junkyard Launch Site Military Tunnels Nuclear Missile Silo Radtown Sewer Branch Trainyard Water Treatment Plant",
+      "content": "Building on the Powerplant loot room introduced in the Power Trip update, we’ve added new loot rooms to many other monuments. These rooms are locked by default and become accessible once enough Heavy Fuses have been inserted into the Powerplant to generate the required power. The number of Heavy Fuses needed to unlock each room varies, with more challenging monuments requiring more fuses than beginner-friendly ones.\nWe won’t spoil the exact locations of these new rooms, but you’ll find them at the following monuments:\nAirfield\nFerry Terminal\nHarbour 1\nHarbour 2\nFerry Terminal\nJunkyard\nLaunch Site\nMilitary Tunnels\nNuclear Missile Silo\nRadtown\nSewer Branch\nTrainyard\nWater Treatment Plant",
       "images": [
         "https://files.facepunch.com/kaantasan/1b3011b1/rust_lootroom_4_1080.jpg"
       ]
@@ -80,7 +80,7 @@
     {
       "title": "population decay scaling of Heavy fuses",
       "author": "Rin",
-      "content": "Power phases are intended to fluctuate based on player interaction with the system. This is largely working as we expected on high population servers. However, on servers with lower population, power is often offline for extended periods of time. With the addition of the marketplace needing power to function, this started to lock out basic necessities like trade. To help ease the pain, we’ve made two changes. Firstly, the decay of heavy fuses will now scale with population. If a server has 10 or less players online, heavy fuses will last four times longer. This gradually scales back to normal values at 100. We’ll continue to monitor this and make adjustments as necessary. Secondly, we have moved the location of the small heavy fuse box at the Power Plant. It’s now accessible from outside the building via a broken window. This should help keep minimum power phases online.",
+      "content": "Power phases are intended to fluctuate based on player interaction with the system. This is largely working as we expected on high population servers. However, on servers with lower population, power is often offline for extended periods of time. With the addition of the marketplace needing power to function, this started to lock out basic necessities like trade. To help ease the pain, we’ve made two changes.\nFirstly, the decay of heavy fuses will now scale with population. If a server has 10 or less players online, heavy fuses will last four times longer. This gradually scales back to normal values at 100. We’ll continue to monitor this and make adjustments as necessary.\nSecondly, we have moved the location of the small heavy fuse box at the Power Plant. It’s now accessible from outside the building via a broken window. This should help keep minimum power phases online.",
       "images": [
         "https://files.facepunch.com/rin/2026/September/29_21-28-LightRhino.jpg"
       ]
@@ -88,7 +88,7 @@
     {
       "title": "Client Predicted Grenades/Explosives",
       "author": "Ian Henderson",
-      "content": "Grenades/C4/Satchels in Rust are server-sided. This means when you left-click, your client will tell the server that it has to spawn the grenade or c4, etc and then we have to wait for the server to do so. With higher ping, this can feel like a substantial wait. We are now introducing some client prediction when you use a grenade/c4/satchel. This means that throwing these items will now feel way smoother (especially on higher pings) as your local client will simulate what will happen on the server before the server has to tell us, but don't worry: if there are any discrepancies, your client will be corrected. This shouldn't happen too often, but it will kick in when it needs to.",
+      "content": "Grenades/C4/Satchels in Rust are server-sided. This means when you left-click, your client will tell the server that it has to spawn the grenade or c4, etc and then we have to wait for the server to do so. With higher ping, this can feel like a substantial wait.\nWe are now introducing some client prediction when you use a grenade/c4/satchel. This means that throwing these items will now feel way smoother (especially on higher pings) as your local client will simulate what will happen on the server before the server has to tell us, but don't worry: if there are any discrepancies, your client will be corrected. This shouldn't happen too often, but it will kick in when it needs to.",
       "images": []
     },
     {
@@ -108,7 +108,7 @@
     {
       "title": "Performance - Viewmodel memory",
       "author": "Jarryd Campi",
-      "content": "We noticed recently that the hands model that forms part of every viewmodel was taking up a surprisingly large amount of memory. Each viewmodel had the same hand mesh included - it was the same mesh but duplicated and bundled with the LR, the Eoka, etc. It wasn't the sort of thing that would have been worth optimising years ago (each one was only 0.9mb) but nowadays we have over 100 viewmodels so it's adding up. We went back through every viewmodel in the game and removed the mesh, then made one standard hands mesh that gets created as well when you equip a viewmodel. This required us to improve some of our internal tooling as not having the mesh included in the viewmodel made it difficult to preview and inspect animations in the Unity editor. Optimisations are important, but generally not at the expense of our internal workflows and efficiency. We removed 133 meshes and saved roughly 100MB of memory in total.",
+      "content": "We noticed recently that the hands model that forms part of every viewmodel was taking up a surprisingly large amount of memory. Each viewmodel had the same hand mesh included - it was the same mesh but duplicated and bundled with the LR, the Eoka, etc. It wasn't the sort of thing that would have been worth optimising years ago (each one was only 0.9mb) but nowadays we have over 100 viewmodels so it's adding up.\nWe went back through every viewmodel in the game and removed the mesh, then made one standard hands mesh that gets created as well when you equip a viewmodel.\nThis required us to improve some of our internal tooling as not having the mesh included in the viewmodel made it difficult to preview and inspect animations in the Unity editor. Optimisations are important, but generally not at the expense of our internal workflows and efficiency.\nWe removed 133 meshes and saved roughly 100MB of memory in total.",
       "images": [
         "https://files.facepunch.com/jarryd-campi/2026/September/rust_ak_inspect_2_1080.jpg"
       ]
@@ -116,7 +116,7 @@
     {
       "title": "New Workshop Skinnable: All Ladder Hatches",
       "author": "matt.i",
-      "content": "This month’s workshop skinnable is another four items! The Ladder Hatches: Ladder Hatch Triangle Ladder Hatch Armored Ladder Hatch Armored Triangle Ladder Hatch This is sure to open up some doors (hatches) to the skinning community! We’ve put in extra effort to make the top and bottom of these hatches unique, so there’s plenty of opportunity to turn your hatch into a delicious pizza. To make your own Ladder Hatch skins, head over to the in-game workshop and locate the Ladder Hatch deployable items listed above. From there, you can download the model files and add your own materials.",
+      "content": "This month’s workshop skinnable is another four items! The Ladder Hatches:\nLadder Hatch\nTriangle Ladder Hatch\nArmored Ladder Hatch\nArmored Triangle Ladder Hatch\nThis is sure to open up some doors (hatches) to the skinning community! We’ve put in extra effort to make the top and bottom of these hatches unique, so there’s plenty of opportunity to turn your hatch into a delicious pizza.\nTo make your own Ladder Hatch skins, head over to the in-game workshop and locate the Ladder Hatch deployable items listed above. From there, you can download the model files and add your own materials.",
       "images": [
         "https://files.facepunch.com/kaantasan/1b2511b1/oct2026_skinnable_ladder_hatches_1_1080.jpg"
       ]
@@ -124,7 +124,7 @@
     {
       "title": "Plague Doctor Hazmat SUIT Item DLC",
       "author": "",
-      "content": "The Plague Doctor is in town. The Plague Doctor delivers no cure - only death and decay. Bring out your dead, or prepare to join them. The Plague Doctor Hazmat Suit can be purchased in-game or from the Rust Steam item store.",
+      "content": "The Plague Doctor is in town.\nThe Plague Doctor delivers no cure - only death and decay. Bring out your dead, or prepare to join them.\nThe Plague Doctor Hazmat Suit can be purchased in-game or from the\nRust Steam item store.",
       "images": [
         "https://files.facepunch.com/matti/1b3011b1/30_10-50-StormyBushbaby.jpg"
       ]
@@ -132,7 +132,7 @@
     {
       "title": "Performance - Dynamic Store Assets",
       "author": "Daniel P",
-      "content": "One area where we could save a bit on memory is our in-game store. We use a lot of different assets to have our store looking great. But when playing the game, you literally can't see them, and yet they're still there either actively hogging up memory or putting pressure on Unity's GPU streaming system. So wouldn't it be nice if we didn't have those assets to worry about when we don't need them? Over the past month we've been working on reorganizing how our in-game store deals with assets. We've made a couple important changes: Store now actively loads and unloads textures when relevant UI pages come in to/out of view These assets are no longer part of the core asset bundles meaning they don't get loaded automatically Store has been converted to fetch images from our backend infrastructure If something goes wrong with our image-serving backend, then game will load local assets You also might see blurred placeholders(done via BlurHash ) while fetching fresh images that you don't have cached: Not only does this allow us to ship content more easily in the future (though there's more work in that direction), but it also saves us RAM: -250MB compared to last release build when starting the game ~450MB when closing the store menu and letting it unload resources after ~1min",
+      "content": "One area where we could save a bit on memory is our in-game store. We use a lot of different assets to have our store looking great. But when playing the game, you literally can't see them, and yet they're still there either actively hogging up memory or putting pressure on Unity's GPU streaming system. So wouldn't it be nice if we didn't have those assets to worry about when we don't need them?\nOver the past month we've been working on reorganizing how our in-game store deals with assets. We've made a couple important changes:\nStore now actively loads and unloads textures when relevant UI pages come in to/out of view\nThese assets are no longer part of the core asset bundles meaning they don't get loaded automatically\nStore has been converted to fetch images from our backend infrastructure\nIf something goes wrong with our image-serving backend, then game will load local assets\nYou also might see blurred placeholders(done via\nBlurHash\n) while fetching fresh images that you don't have cached:\nNot only does this allow us to ship content more easily in the future (though there's more work in that direction), but it also saves us RAM:\n-250MB compared to last release build when starting the game\n~450MB when closing the store menu and letting it unload resources after ~1min",
       "images": [
         "https://files.facepunch.com/danielprihodko/2026/September/23_12-22-BossyGyrfalcon.png"
       ]
@@ -140,13 +140,13 @@
     {
       "title": "Performance - Animation IK JObs",
       "author": "octo",
-      "content": "We moved all of our inverse kinematics, which are secondary procedural animations like spine or hand movements, to be multithreaded this week. Previously, they were all running one by one for each player at the end of a frame, right after the animations had played. Other than performance, this actually lets us do a couple of things: - We can use IK in our new animation subsystems and still keep them multi threaded. Any subsystem can just modify the IK before it runs. - We have a lot more control over existing IK, we previously relied heavily on built-in IK from Unity. Faster: Update: 1.99ms → 1.47ms = -0.52ms~ LateUpdate: 0.98ms → 0.27ms = -0.71ms~ AnimationGraphFinish: 0.99ms → 0.75ms = -0.24ms~ Worse: DirectorUpdateAnimationBegin: 0.42ms → 0.62ms = +0.20ms~ UpdateIkJobData: 0ms → 0.11ms = +0.11ms~ Overall: UpdateScene: 9.36ms → 8.29ms = -1.07ms~ Director begin+end: 1.41ms → 1.37ms = -0.04ms~ Performance-wise, the new IK saves us around 1ms of frame time with 100 players in the scene, this will probably be a lot less drastic if you play on a lower-population server and only end up seeing 5-10 players at once.",
+      "content": "We moved all of our inverse kinematics, which are secondary procedural animations like spine or hand movements, to be multithreaded this week. Previously, they were all running one by one for each player at the end of a frame, right after the animations had played.\nOther than performance, this actually lets us do a couple of things:\n- We can use IK in our new animation subsystems and still keep them multi threaded. Any subsystem can just modify the IK before it runs.\n- We have a lot more control over existing IK, we previously relied heavily on built-in IK from Unity.\nFaster:\nUpdate: 1.99ms → 1.47ms = -0.52ms~\nLateUpdate: 0.98ms → 0.27ms = -0.71ms~\nAnimationGraphFinish: 0.99ms → 0.75ms = -0.24ms~\nWorse:\nDirectorUpdateAnimationBegin: 0.42ms → 0.62ms = +0.20ms~\nUpdateIkJobData: 0ms → 0.11ms = +0.11ms~\nOverall:\nUpdateScene: 9.36ms → 8.29ms = -1.07ms~\nDirector begin+end: 1.41ms → 1.37ms = -0.04ms~\nPerformance-wise, the new IK saves us around 1ms of frame time with 100 players in the scene, this will probably be a lot less drastic if you play on a lower-population server and only end up seeing 5-10 players at once.",
       "images": []
     },
     {
       "title": "Rust Render Pipeline",
       "author": "Aidan Murray",
-      "content": "Because Rust has been around for so long, we were still using Unity’s old Built-in Render Pipeline, which has worked for the most part but has been very limiting in the optimisations we can apply and the effects we can render. We have now migrated to the new Rust Render Pipeline, which is a custom Scriptable Render Pipeline made specifically for Rust by our graphics team. This gives us a lot more control over the rendering of Rust as a whole. This wasn’t easy, as we had to remake almost every effect in the game to work with this new pipeline. The main benefit of this will be performance. At first, you should see slightly better performance in most areas of the game, as the new pipeline comes with less overhead. However, this is just the beginning. Our initial goal was to get this pipeline working in tandem with the original pipeline to ensure everything worked correctly and that we could still switch between them at runtime. Once we have fully transitioned, we will be able to optimise this pipeline further, meaning there will be more performance gains in the near future. We also have plans for improving the quality of graphics in the game where we weren’t previously able to do due to the old pipeline. The Rust Render Pipeline can be toggled via a setting under the experimental tab so players can switch back and forth between pipelines in case there are any issues initially. This setting is only going to be here for the first month in case anyone encounters graphical or performance issues that we missed while testing. Hopefully, after the next patch, we’ll be able to remove this fully and have RRP as the default once we know that no serious issues remain.",
+      "content": "Because Rust has been around for so long, we were still using Unity’s old Built-in Render Pipeline, which has worked for the most part but has been very limiting in the optimisations we can apply and the effects we can render.\nWe have now migrated to the new Rust Render Pipeline, which is a custom Scriptable Render Pipeline made specifically for Rust by our graphics team. This gives us a lot more control over the rendering of Rust as a whole. This wasn’t easy, as we had to remake almost every effect in the game to work with this new pipeline.\nThe main benefit of this will be performance. At first, you should see slightly better performance in most areas of the game, as the new pipeline comes with less overhead. However, this is just the beginning. Our initial goal was to get this pipeline working in tandem with the original pipeline to ensure everything worked correctly and that we could still switch between them at runtime. Once we have fully transitioned, we will be able to optimise this pipeline further, meaning there will be more performance gains in the near future. We also have plans for improving the quality of graphics in the game where we weren’t previously able to do due to the old pipeline.\nThe Rust Render Pipeline can be toggled via a setting under the experimental tab so players can switch back and forth between pipelines in case there are any issues initially. This setting is only going to be here for the first month in case anyone encounters graphical or performance issues that we missed while testing. Hopefully, after the next patch, we’ll be able to remove this fully and have RRP as the default once we know that no serious issues remain.",
       "images": [
         "https://files.facepunch.com/kaantasan/1b3011b1/oct2026_rrp_rust_render_pipeline_1_1080.jpg"
       ]
@@ -154,7 +154,7 @@
     {
       "title": "Anticheat: Additional Secure Servers",
       "author": "Ryan",
-      "content": "Back in March we introduced the ability for servers to require TPM + Secure Boot , enabling it for 6 of our own servers. Over the last 6+ months we have seen security feature adoption grow at a steady pace and we're ready to switch more servers to secure, continuing with the following Facepunch servers: [US East] Facepunch 1 [EA] Facepunch 1 [EU] Facepunch 15 [EU East] Facepunch 1 [EU] Facepunch 16 [EA] Facepunch 2 Our desired goal is still to make it global for all servers in Rust, but we still have some ways to go for adoption, see adoption rates over the last 6+ months: If your hardware supports it, we would strongly recommend you take steps to enable these features, see this support page . If you have TPM and Secure Boot already enabled feel free to give a secure server a chance, we were able to determine a reduced cheater presence on these servers a month after release.",
+      "content": "Back in March we introduced the ability for servers to\nrequire TPM + Secure Boot\n, enabling it for 6 of our own servers.\nOver the last 6+ months we have seen security feature adoption grow at a steady pace and we're ready to switch more servers to secure, continuing with the following Facepunch servers:\n[US East] Facepunch 1\n[EA] Facepunch 1\n[EU] Facepunch 15\n[EU East] Facepunch 1\n[EU] Facepunch 16\n[EA] Facepunch 2\nOur desired goal is still to make it global for all servers in Rust, but we still have some ways to go for adoption, see adoption rates over the last 6+ months:\nIf your hardware supports it, we would strongly recommend you take steps to enable these features, see\nthis support page\n. If you have TPM and Secure Boot already enabled feel free to give a secure server a chance, we were able to determine a\nreduced cheater presence\non these servers a month after release.",
       "images": [
         "https://files.facepunch.com/ryanw/2026/September/29_11-42-QuestionableXenarthra.png"
       ]
@@ -162,13 +162,13 @@
     {
       "title": "Crash uploading",
       "author": "jake",
-      "content": "Last month we fixed EAC preventing the game from dumping crashes. This month we added uploading of crashes to our backend automatically. We now get a direct report when it happens instead of having to chase down players and manually reproduce the crash in our development builds of the game. You should see increased game stability going forward as we can respond to crashes much more effectively now.",
+      "content": "Last month we fixed EAC preventing the game from dumping crashes. This month we added uploading of crashes to our backend automatically. We now get a direct report when it happens instead of having to chase down players and manually reproduce the crash in our development builds of the game.\nYou should see increased game stability going forward as we can respond to crashes much more effectively now.",
       "images": []
     },
     {
       "title": "rust isles - Twitch Drops",
       "author": "ashcook123",
-      "content": "Don't forget to tune in to Twitch and catch the last few days of Rust Isles - your favourite creators battling for control of the seas! Sync your accounts here to claim all Twitch Drops. And stay vigilant of scams!",
+      "content": "Don't forget to tune in to Twitch and catch the last few days of Rust Isles - your favourite creators battling for control of the seas!\nSync your accounts\nhere\nto claim all Twitch Drops. And stay vigilant of scams!",
       "images": [
         "https://files.facepunch.com/errn/2026/October/td_53-blog-image.jpg"
       ]
@@ -176,7 +176,7 @@
     {
       "title": "steam autumn sale",
       "author": "ashcook123",
-      "content": "The Steam Autumn Sale is here! Save 50% off Rust and all DLCs, and 20% off the Rust - Warhammer 40,000 Pack! Already got Rust? Treat that new clan member to a copy!",
+      "content": "The Steam Autumn Sale is here!\nSave 50% off Rust\nand all DLCs, and 20% off the Rust - Warhammer 40,000 Pack!\nAlready got Rust? Treat that new clan member to a copy!",
       "images": [
         "https://files.facepunch.com/ashley.cook/2026/September/Autumn-Sale---16x9.png"
       ]
@@ -184,7 +184,7 @@
     {
       "title": "Halloween Update",
       "author": "Rin",
-      "content": "On October 22nd at 18:00BST / 13:00 EST, we'll release a mandatory server and client update to enable some spooky features! Server owners, please remember this date.",
+      "content": "On October 22nd at 18:00BST / 13:00 EST, we'll release a mandatory server and client update to enable some spooky features!\nServer owners, please remember this date.",
       "images": [
         "https://files.facepunch.com/errn/2026/October/coffindecoration_01.jpg"
       ]
