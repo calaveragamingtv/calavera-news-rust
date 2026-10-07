@@ -1281,7 +1281,7 @@ def generate_x_post(
         prompt_template
         .replace(
             "{{ARTICLE_TITLE}}",
-            article["title"]
+            article.get("title") or ""
         )
         .replace(
             "{{ARTICLE_DATE}}",
@@ -1299,11 +1299,35 @@ def generate_x_post(
         )
         .replace(
             "{{SECTION_TITLE}}",
-            item["title"]
+            item.get("title") or ""
         )
         .replace(
-            "{{SECTION_CONTENT}}",
-            item["content"]
+            "{{AUTHOR}}",
+            item.get("author") or ""
+        )
+        .replace(
+            "{{CONTENT_TYPE}}",
+            item.get("content_type") or ""
+        )
+        .replace(
+            "{{REASON}}",
+            item.get("reason") or ""
+        )
+        .replace(
+            "{{IMPORTANCE}}",
+            str(item.get("importance") or "")
+        )
+        .replace(
+            "{{INTERACTION_POTENTIAL}}",
+            str(item.get("interaction_potential") or "")
+        )
+        .replace(
+            "{{SOCIAL_VALUE}}",
+            str(item.get("social_value") or "")
+        )
+        .replace(
+            "{{CONTENT}}",
+            item.get("content") or ""
         )
     )
 
@@ -1331,6 +1355,27 @@ def generate_x_post(
             "Gemini no devolvió texto "
             "para el post X"
         )
+
+    # Protección contra placeholders sin resolver
+    placeholders = [
+        "{{CONTENT}}",
+        "{{SECTION_CONTENT}}",
+        "{{ARTICLE_TITLE}}",
+        "{{SECTION_TITLE}}",
+        "{{AUTHOR}}",
+        "{{CONTENT_TYPE}}",
+        "{{REASON}}",
+        "{{IMPORTANCE}}",
+        "{{INTERACTION_POTENTIAL}}",
+        "{{SOCIAL_VALUE}}",
+    ]
+
+    for placeholder in placeholders:
+        if placeholder in text:
+            raise RuntimeError(
+                f"Gemini devolvió un placeholder "
+                f"sin resolver: {placeholder}"
+            )
 
     print()
     print(
