@@ -77,255 +77,135 @@ def get_latest_news():
 def parse_news(url):
 
     html = get_page(url)
+    soup = BeautifulSoup(html, "html.parser")
 
-    soup = BeautifulSoup(
-        html,
-        "html.parser"
+    print("DEBUG metadata:")
+
+    print(
+        "HTML title:",
+        soup.title.get_text(" ", strip=True)
+        if soup.title
+        else "NO ENCONTRADO"
     )
 
-    # ==========================================
-    # ARTICLE METADATA
-    # ==========================================
+    print(
+        "h1:",
+        soup.find("h1").get_text(" ", strip=True)
+        if soup.find("h1")
+        else "NO ENCONTRADO"
+    )
+
+    print(
+        "time:",
+        soup.find("time").get_text(" ", strip=True)
+        if soup.find("time")
+        else "NO ENCONTRADO"
+    )
+
+    print(
+        "DEVBLOG links:",
+        len(
+            [
+                a
+                for a in soup.find_all("a")
+                if a.get_text(" ", strip=True).upper() == "DEVBLOG"
+            ]
+        )
+    )
 
     title = ""
 
-    # ------------------------------------------
-    # Title - <title>
-    # ------------------------------------------
-
-    page_title = soup.title
-
-    if page_title:
-
-        title = page_title.get_text(
-            " ",
-            strip=True
-        )
-
-    # ------------------------------------------
-    # Title - Open Graph
-    # ------------------------------------------
+    if soup.title:
+        title = soup.title.get_text(" ", strip=True)
 
     if not title:
-
-        og_title = soup.select_one(
-            'meta[property="og:title"]'
-        )
-
+        og_title = soup.select_one('meta[property="og:title"]')
         if og_title:
-
-            title = og_title.get(
-                "content",
-                ""
-            ).strip()
-
-    # ------------------------------------------
-    # Title - h1
-    # ------------------------------------------
+            title = og_title.get("content", "").strip()
 
     if not title:
-
-        title_element = soup.find("h1")
-
-        if title_element:
-
-            title = title_element.get_text(
-                " ",
-                strip=True
-            )
-
-    # ------------------------------------------
-    # Date
-    # ------------------------------------------
+        h1 = soup.find("h1")
+        if h1:
+            title = h1.get_text(" ", strip=True)
 
     date = ""
 
-    date_element = soup.find("time")
+    time_element = soup.find("time")
 
-    if date_element:
-
+    if time_element:
         date = (
-            date_element.get("datetime")
-            or date_element.get_text(
-                " ",
-                strip=True
-            )
+            time_element.get("datetime")
+            or time_element.get_text(" ", strip=True)
         )
 
-    # ------------------------------------------
-    # Date - metadata
-    # ------------------------------------------
-
     if not date:
-
-        meta_date_candidates = [
+        for selector in [
             'meta[property="article:published_time"]',
             'meta[name="date"]',
             'meta[itemprop="datePublished"]'
-        ]
-
-        for selector in meta_date_candidates:
-
-            element = soup.select_one(
-                selector
-            )
+        ]:
+            element = soup.select_one(selector)
 
             if element:
-
-                date = element.get(
-                    "content",
-                    ""
-                ).strip()
+                date = element.get("content", "").strip()
 
                 if date:
                     break
 
-    # ------------------------------------------
-    # Date - text fallback
-    # ------------------------------------------
-
-    if not date:
-
-        page_text = soup.get_text(
-            " ",
-            strip=True
-        )
-
-        date_match = re.search(
-            r"\b\d{2}\s+[A-Za-z]+\s+\d{4}\b",
-            page_text
-        )
-
-        if date_match:
-
-            date = date_match.group(
-                0
-            )
-
-    # ------------------------------------------
-    # Type
-    # ------------------------------------------
-
     news_type = ""
 
-    # Facepunch muestra DEVBLOG como texto/link.
     for element in soup.find_all("a"):
-
-        text = element.get_text(
-            " ",
-            strip=True
-        )
+        text = element.get_text(" ", strip=True)
 
         if text.upper() == "DEVBLOG":
-
             news_type = "DEVBLOG"
-
             break
-
-    # ------------------------------------------
-    # Type - generic text fallback
-    # ------------------------------------------
-
-    if not news_type:
-
-        page_text = soup.get_text(
-            " ",
-            strip=True
-        )
-
-        if "DEVBLOG" in page_text.upper():
-
-            news_type = "DEVBLOG"
-
-    # ==========================================
-    # SECTIONS
-    # ==========================================
 
     sections = []
 
-    section_blocks = soup.select(
-        ".news-section-block"
-    )
+    section_blocks = soup.select(".news-section-block")
 
     for block in section_blocks:
 
-        title_element = block.select_one(
-            ".section-header .title"
-        )
+        title_element = block.select_one(".section-header .title")
 
         if not title_element:
             continue
 
-        section_title = title_element.get_text(
-            " ",
-            strip=True
-        )
+        section_title = title_element.get_text(" ", strip=True)
 
         if not section_title:
             continue
 
-        # Facepunch utiliza este carácter
-        # como separador en algunas partes.
         if section_title == "⠀":
             continue
 
-        # --------------------------------------
-        # Author
-        # --------------------------------------
+        author_element = block.select_one(".section-header .author")
 
         author = ""
 
-        author_element = block.select_one(
-            ".section-header .author"
-        )
-
         if author_element:
+            author = author_element.get_text(" ", strip=True)
 
-            author = author_element.get_text(
-                " ",
-                strip=True
-            )
-
-        # --------------------------------------
-        # Content
-        # --------------------------------------
+        content_element = block.select_one(".content")
 
         content = ""
 
-        content_element = block.select_one(
-            ".content"
-        )
-
         if content_element:
-
-            content = content_element.get_text(
-                "\n",
-                strip=True
-            )
-
-        # --------------------------------------
-        # Images
-        # --------------------------------------
+            content = content_element.get_text("\n", strip=True)
 
         images = []
 
         if content_element:
 
-            for img in content_element.select(
-                "img"
-            ):
+            for img in content_element.select("img"):
 
                 src = img.get("src")
 
-                if not src:
-                    continue
-
-                images.append(
-                    urljoin(
-                        BASE_URL,
-                        src
+                if src:
+                    images.append(
+                        urljoin(BASE_URL, src)
                     )
-                )
 
         sections.append({
             "title": section_title,
@@ -333,10 +213,6 @@ def parse_news(url):
             "content": content,
             "images": images
         })
-
-    # ==========================================
-    # FINAL ARTICLE OBJECT
-    # ==========================================
 
     return {
         "url": url,
