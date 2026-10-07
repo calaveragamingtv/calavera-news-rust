@@ -3,283 +3,151 @@ import os
 import time
 
 import requests
-
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from google import genai
 
 
 BASE_URL = "https://rust.facepunch.com"
-NEWS_URL = f"{BASE_URL}/news/"
+NEWS_URL = "https://rust.facepunch.com/news/"
 
 HEADERS = {
-    "User-Agent": "RustNewsBot/1.0"
+    "User-Agent": "Mozilla/5.0"
 }
 
 
-# ============================================================
-# WEB
-# ============================================================
-
 def get_page(url):
-
-    response = requests.get(
-        url,
-        headers=HEADERS,
-        timeout=30
-    )
-
+    response = requests.get(url, headers=HEADERS, timeout=30)
     response.raise_for_status()
-
-    return BeautifulSoup(
-        response.text,
-        "html.parser"
-    )
+    return response.text
 
 
 def get_latest_news():
+    html = get_page(NEWS_URL)
+    soup = BeautifulSoup(html, "html.parser")
 
-    soup = get_page(NEWS_URL)
+    link = soup.select_one("a.news-item")
 
-    links = []
+    if not link:
+        raise Exception("No se pudo encontrar la última noticia.")
 
-    for link in soup.find_all("a", href=True):
+    href = link.get("href")
 
-        href = link["href"]
+    if not href:
+        raise Exception("La noticia no tiene URL.")
 
-        if "/news/" in href and href != "/news/":
+    return urljoin(BASE_URL, href)
 
-            full_url = urljoin(
-                BASE_URL,
-                href
-            )
-
-            if full_url not in links:
-
-                links.append(full_url)
-
-    if not links:
-
-        raise RuntimeError(
-            "No se encontraron noticias en Facepunch."
-        )
-
-    return links[0]
-
-
-# ============================================================
-# PARSER DE NOTICIA
-# ============================================================
 
 def parse_news(url):
+    html = get_page(url)
+    soup = BeautifulSoup(html, "html.parser")
 
-    soup = get_page(url)
+    title_element = soup.select_one("h1")
+    title = title_element.get_text(" ", strip=True) if title_element else ""
 
-    result = {
-        "url": url,
-        "title": None,
-        "date": None,
-        "type": None,
-        "sections": []
-    }
+    date = ""
+    date_element = soup.select_one("time")
 
-    # ----------------------------
-    # Título
-    # ----------------------------
+    if date_element:
+        date = date_element.get_text(" ", strip=True)
 
-    if soup.title:
+    type_element = soup.select_one(".news-type")
 
-        result["title"] = soup.title.get_text(
-            " ",
-            strip=True
-        )
-
-    # ----------------------------
-    # Fecha / tipo
-    # ----------------------------
-
-    tags = soup.select_one(".tags")
-
-    if tags:
-
-        tag_text = tags.get_text(
-            " ",
-            strip=True
-        )
-
-        parts = tag_text.split()
-
-        if parts:
-
-            result["date"] = " ".join(
-                parts[:3]
-            )
-
-        if "DEVBLOG" in tag_text:
-
-            result["type"] = "DEVBLOG"
-
-    # ----------------------------
-    # Secciones
-    # ----------------------------
-
-    sections = soup.select(
-        ".news-section-block"
+    news_type = (
+        type_element.get_text(" ", strip=True)
+        if type_element
+        else "DEVBLOG"
     )
 
-    for section in sections:
+    sections = []
 
-        title_element = section.select_one(
-            ".section-header .title"
-        )
+    for block in soup.select(".news-section-block"):
+
+        header = block.select_one(".section-header")
+
+        if not header:
+            continue
+
+        title_element = header.select_one(".title")
 
         if not title_element:
             continue
 
-        title = title_element.get_text(
-            " ",
-            strip=True
-        )
+        section_title = title_element.get_text(" ", strip=True)
 
-        # Ignorar bloques que no son secciones reales
-        if not title or title == "⠀":
+        if not section_title or section_title == "⠀":
             continue
 
-        # ------------------------
-        # Autor
-        # ------------------------
-
-        author_element = section.select_one(
-            ".section-header .author"
-        )
+        author_element = header.select_one(".author")
 
         author = (
-
-            author_element.get_text(
-                " ",
-                strip=True
-            )
-
+            author_element.get_text(" ", strip=True)
             if author_element
-
-            else None
-        )
-
-        # ------------------------
-        # Contenido
-        # ------------------------
-
-        content_element = section.select_one(
-            ".content"
-        )
-
-        content = (
-
-            content_element.get_text(
-                " ",
-                strip=True
-            )
-
-            if content_element
-
             else ""
         )
 
-        # ------------------------
-        # Imágenes
-        # ------------------------
+        content_element = block.select_one(".content")
+
+        if not content_element:
+            continue
+
+        content = content_element.get_text(" ", strip=True)
 
         images = []
 
-        for image in section.select(
-            ".content img"
-        ):
-
+        for image in content_element.select("img"):
             src = image.get("src")
 
             if src:
+                images.append(urljoin(BASE_URL, src))
 
-                images.append(
-                    urljoin(
-                        url,
-                        src
-                    )
-                )
-
-        # ------------------------
-        # Guardar sección
-        # ------------------------
-
-        result["sections"].append({
-
-            "title": title,
-
+        sections.append({
+            "title": section_title,
             "author": author,
-
             "content": content,
-
             "images": images
-
         })
 
-    return result
+    return {
+        "url": url,
+        "title": title,
+        "date": date,
+        "type": news_type,
+        "sections": sections
+    }
 
-
-# ============================================================
-# GUARDAR NOTICIA
-# ============================================================
 
 def save_news(news):
-
-    os.makedirs(
-        "data",
-        exist_ok=True
-    )
+    os.makedirs("data", exist_ok=True)
 
     with open(
         "data/latest_news.json",
         "w",
         encoding="utf-8"
     ) as file:
-
         json.dump(
             news,
             file,
-            indent=2,
-            ensure_ascii=False
+            ensure_ascii=False,
+            indent=2
         )
 
+    print("Noticia guardada en data/latest_news.json")
 
-# ============================================================
-# GEMINI
-# ============================================================
 
 def analyze_all_sections(news):
 
-    api_key = os.environ.get(
-        "GEMINI_API_KEY"
-    )
+    api_key = os.environ.get("GEMINI_API_KEY")
 
     if not api_key:
+        raise Exception("No se encontró GEMINI_API_KEY.")
 
-        raise RuntimeError(
-            "No se encontró GEMINI_API_KEY."
-        )
-
-    client = genai.Client(
-        api_key=api_key
-    )
-
-    # --------------------------------------------------------
-    # Preparar todas las secciones para Gemini
-    # --------------------------------------------------------
+    client = genai.Client(api_key=api_key)
 
     sections_text = ""
 
-    for index, section in enumerate(
-        news["sections"],
-        start=1
-    ):
+    for index, section in enumerate(news["sections"], start=1):
 
         sections_text += f"""
 SECTION {index}
@@ -293,202 +161,225 @@ Author:
 Content:
 {section["content"]}
 
---------------------------------
+---
 """
 
-    # --------------------------------------------------------
-    # Prompt
-    # --------------------------------------------------------
-
     prompt = f"""
-You are a Rust game content analyst.
-
-Analyze ALL sections of this Rust news article.
-
-Your goal is to determine which sections are worth turning into
-individual pieces of content for the Rust community on X.
+You are analyzing a Rust Facepunch devblog for a Spanish-speaking Rust content creator.
 
 ARTICLE:
-
-Title:
 {news["title"]}
 
-Date:
+DATE:
 {news["date"]}
 
-Type:
+TYPE:
 {news["type"]}
 
+Your task is to analyze ALL sections and determine which ones deserve
+individual social media content.
 
-SECTIONS:
+IMPORTANT LANGUAGE RULE:
 
-{sections_text}
+The ORIGINAL section titles and source information must remain unchanged.
 
+However, ALL AI-GENERATED TEXT must be written in natural Latin American Spanish.
 
-RETURN FORMAT:
+This includes:
+- reasons
+- explanations
+- future tweet ideas
+- future Discord content
+- any other generated text
+
+DO NOT generate final social media text in English.
+
+Use natural Latin American Spanish, not literal or robotic translations.
+
+Rust item names, monument names, mechanics, systems and official terminology
+may remain in English when that is the official name used by the game.
+
+For every section return exactly one analysis object.
 
 Return ONLY valid JSON.
 
-Use exactly this structure:
+Do not use markdown.
+Do not use ```json.
+Do not add explanations outside the JSON.
+
+The JSON must have exactly this structure:
 
 {{
   "sections": [
     {{
-      "title": "section title",
+      "title": "original section title",
       "importance": 0,
       "interaction_potential": 0,
       "recommended": true,
+      "priority": 0,
+      "publication_type": "standalone",
       "content_type": "news",
-      "reason": "short explanation"
+      "reason": "explicación breve en español latino"
     }}
   ]
 }}
 
-
 RULES:
 
-- Return EXACTLY one analysis object for every section.
-- Keep the original section titles.
-- importance must be an integer from 1 to 10.
-- interaction_potential must be an integer from 1 to 10.
-- recommended must be true or false.
-- recommended should be true only when the section deserves
-  its own X post.
-- Do NOT recommend every section.
-- content_type must be one of:
-  "news"
-  "question"
-  "debate"
-  "fact"
-  "curiosity"
-- reason must be short.
-- Compare the sections against each other.
-- Prioritize:
-  - important gameplay changes
-  - new mechanics
-  - major balance changes
-  - controversial changes
-  - useful information for players
-  - surprising facts
-  - topics likely to generate discussion
-- Minor technical fixes should normally NOT be recommended.
-- Do not invent information.
-- Only use information contained in the article sections.
+1. "title"
+   - Must be EXACTLY the original section title.
+   - Do not translate it.
+
+2. "importance"
+   - Integer from 1 to 10.
+   - Measures how important the information is for Rust players.
+
+3. "interaction_potential"
+   - Integer from 1 to 10.
+   - Measures how likely the topic is to generate comments, discussion,
+     reactions or interest on social media.
+
+4. "recommended"
+   - true only if the section deserves individual social media content.
+   - false for minor, repetitive, purely technical or low-interest information.
+
+5. "priority"
+   - Integer starting at 1.
+   - 1 is the MOST important section to publish.
+   - Higher numbers mean lower priority.
+   - Recommended sections should receive the highest priorities.
+   - Non-recommended sections should receive the lowest priorities.
+   - Every section must have a unique priority.
+
+6. "publication_type"
+   Must be exactly one of:
+   - "standalone"
+   - "related"
+   - "skip"
+
+   "standalone":
+   The section deserves its own independent social media post.
+
+   "related":
+   The section is interesting but is strongly related to another major section
+   and may work better combined with it rather than as an independent post.
+
+   "skip":
+   The section should not generate social media content.
+
+7. "content_type"
+   Must be exactly one of:
+   - "news"
+   - "question"
+   - "debate"
+   - "fact"
+   - "curiosity"
+
+8. "reason"
+   - Short explanation in natural Latin American Spanish.
+   - Explain why the section does or does not deserve content.
+
+IMPORTANT:
+
+Compare the sections against each other.
+
+Do NOT mark everything as recommended.
+
+The goal is to identify the strongest content from the entire article.
+
+Prioritize:
+
+- major gameplay changes
+- new mechanics
+- important balance changes
+- major changes to the Rust meta
+- controversial changes
+- useful information for players
+- surprising mechanics
+- information that creates discussion
+- information that can generate strong Rust community reactions
+
+Normally do NOT recommend:
+
+- minor bug fixes
+- small technical optimizations
+- cosmetic-only changes
+- minor UI changes
+- routine backend changes
+- repetitive information
+- low-impact details
+
+Avoid creating multiple independent posts about essentially the same topic.
+
+For example, if several sections explain different aspects of one major feature,
+the main feature can be "standalone" while related details can be "related".
+
+The eventual social media strategy is:
+
+- one strong piece of content at a time
+- prioritize the most interesting topics first
+- avoid repetitive posts
+- eventually publish remaining worthwhile sections on subsequent days
+- stop when there is no worthwhile content remaining
+
+Here are ALL sections:
+
+{sections_text}
 """
 
-    # --------------------------------------------------------
-    # Llamada a Gemini
-    # --------------------------------------------------------
+    max_retries = 3
 
-    for attempt in range(3):
+    for attempt in range(1, max_retries + 1):
 
         try:
 
-            print(
-                "\nEnviando todas las secciones "
-                "a Gemini..."
-            )
+            print("Enviando todas las secciones a Gemini...")
 
             response = client.models.generate_content(
-
                 model="gemini-3.5-flash-lite",
-
                 contents=prompt
-
             )
 
-            print(
-                "\nRespuesta recibida de Gemini."
-            )
+            print("Respuesta recibida de Gemini.")
 
-            # ------------------------------------------------
-            # Convertir respuesta a JSON
-            # ------------------------------------------------
+            result = json.loads(response.text)
 
-            try:
+            analyses = result.get("sections")
 
-                result = json.loads(
-                    response.text
+            if not isinstance(analyses, list):
+                raise Exception(
+                    "Gemini no devolvió una lista válida de secciones."
                 )
 
-            except json.JSONDecodeError:
-
-                print(
-                    "\nERROR: Gemini no devolvió "
-                    "JSON válido."
+            if len(analyses) != len(news["sections"]):
+                raise Exception(
+                    f"Gemini devolvió {len(analyses)} análisis "
+                    f"pero deberían ser {len(news['sections'])}."
                 )
 
-                print(
-                    "\nRespuesta de Gemini:"
-                )
-
-                print(
-                    response.text
-                )
-
-                raise
-
-            # ------------------------------------------------
-            # Validar estructura
-            # ------------------------------------------------
-
-            if "sections" not in result:
-
-                raise RuntimeError(
-                    "La respuesta de Gemini no contiene "
-                    "la propiedad 'sections'."
-                )
-
-            return result["sections"]
+            return analyses
 
         except Exception as error:
 
-            print(
-                f"\nGemini intento "
-                f"{attempt + 1}/3 falló:"
-            )
+            print(f"Error con Gemini: {error}")
 
-            print(
-                error
-            )
-
-            if attempt < 2:
-
-                print(
-                    "\nEsperando 30 segundos "
-                    "antes de reintentar..."
-                )
-
+            if attempt < max_retries:
+                print("Esperando 30 segundos antes de reintentar...")
                 time.sleep(30)
-
             else:
-
                 raise
 
 
-# ============================================================
-# GUARDAR ANÁLISIS
-# ============================================================
-
 def save_analysis(news, analyses):
 
-    os.makedirs(
-        "data",
-        exist_ok=True
-    )
+    os.makedirs("data", exist_ok=True)
 
-    result = {
-
+    analysis_data = {
         "url": news["url"],
-
         "title": news["title"],
-
         "date": news["date"],
-
         "type": news["type"],
-
         "sections": analyses
-
     }
 
     with open(
@@ -496,127 +387,117 @@ def save_analysis(news, analyses):
         "w",
         encoding="utf-8"
     ) as file:
-
         json.dump(
-            result,
+            analysis_data,
             file,
-            indent=2,
-            ensure_ascii=False
+            ensure_ascii=False,
+            indent=2
         )
 
+    print("Análisis guardado en data/news_analysis.json")
 
-# ============================================================
-# MAIN
-# ============================================================
+
+def create_content_queue(news, analyses):
+
+    queue = []
+
+    for analysis in analyses:
+
+        if not analysis.get("recommended"):
+            continue
+
+        if analysis.get("publication_type") == "skip":
+            continue
+
+        section = next(
+            (
+                item
+                for item in news["sections"]
+                if item["title"] == analysis["title"]
+            ),
+            None
+        )
+
+        if not section:
+            continue
+
+        queue.append({
+            "title": section["title"],
+            "author": section["author"],
+            "content": section["content"],
+            "images": section["images"],
+            "importance": analysis["importance"],
+            "interaction_potential": analysis["interaction_potential"],
+            "priority": analysis["priority"],
+            "publication_type": analysis["publication_type"],
+            "content_type": analysis["content_type"],
+            "published": False
+        })
+
+    queue.sort(key=lambda item: item["priority"])
+
+    queue_data = {
+        "url": news["url"],
+        "title": news["title"],
+        "date": news["date"],
+        "status": "pending",
+        "sections": queue
+    }
+
+    with open(
+        "data/content_queue.json",
+        "w",
+        encoding="utf-8"
+    ) as file:
+        json.dump(
+            queue_data,
+            file,
+            ensure_ascii=False,
+            indent=2
+        )
+
+    print("Cola guardada en data/content_queue.json")
+    print(f"Se encontraron {len(queue)} contenidos recomendados.")
+
 
 def main():
 
-    print(
-        "================================"
-    )
+    print("================================")
+    print("       RUST NEWS BOT")
+    print("================================")
 
-    print(
-        "       RUST NEWS BOT"
-    )
-
-    print(
-        "================================"
-    )
-
-    # --------------------------------------------------------
-    # 1. Buscar última noticia
-    # --------------------------------------------------------
-
-    print(
-        "\nBuscando última noticia..."
-    )
+    print("Buscando última noticia...")
 
     latest_url = get_latest_news()
 
-    print(
-        f"URL: {latest_url}"
-    )
+    print(f"URL: {latest_url}")
 
-    # --------------------------------------------------------
-    # 2. Parsear noticia
-    # --------------------------------------------------------
+    print("Analizando noticia...")
 
-    print(
-        "\nAnalizando noticia..."
-    )
+    news = parse_news(latest_url)
 
-    news = parse_news(
-        latest_url
-    )
-
-    # --------------------------------------------------------
-    # 3. Guardar noticia completa
-    # --------------------------------------------------------
-
-    save_news(
-        news
-    )
+    save_news(news)
 
     print(
-        "\nNoticia guardada en "
-        "data/latest_news.json"
+        f"Se encontraron {len(news['sections'])} secciones."
     )
+
+    print("Analizando todas las secciones con Gemini...")
+
+    analyses = analyze_all_sections(news)
+
+    save_analysis(news, analyses)
+
+    create_content_queue(news, analyses)
+
+    print("================================")
+    print("      ANALISIS COMPLETADO")
+    print("================================")
 
     print(
-        f"\nSe encontraron "
-        f"{len(news['sections'])} secciones."
+        f"Se analizaron {len(analyses)} secciones."
     )
 
-    # --------------------------------------------------------
-    # 4. Analizar TODAS las secciones
-    #    con UNA sola llamada a Gemini
-    # --------------------------------------------------------
-
-    print(
-        "\nAnalizando todas las secciones "
-        "con Gemini..."
-    )
-
-    analyses = analyze_all_sections(
-        news
-    )
-
-    # --------------------------------------------------------
-    # 5. Guardar análisis
-    # --------------------------------------------------------
-
-    save_analysis(
-        news,
-        analyses
-    )
-
-    print(
-        "\n================================"
-    )
-
-    print(
-        "      ANALISIS COMPLETADO"
-    )
-
-    print(
-        "================================"
-    )
-
-    print(
-        "\nAnálisis guardado en "
-        "data/news_analysis.json"
-    )
-
-    print(
-        f"\nSe analizaron "
-        f"{len(analyses)} secciones."
-    )
-
-
-# ============================================================
-# ENTRY POINT
-# ============================================================
 
 if __name__ == "__main__":
-
     main()
