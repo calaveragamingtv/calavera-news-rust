@@ -1,6 +1,7 @@
 import json
 import os
 import re
+from datetime import datetime, timezone
 
 import requests
 from bs4 import BeautifulSoup
@@ -25,6 +26,7 @@ HEADERS = {
 }
 
 GEMINI_MODEL = "gemini-3.5-flash-lite"
+
 MIN_PUBLICATION_SCORE = 75
 
 BASE_DIR = os.path.dirname(
@@ -64,6 +66,7 @@ QUEUE_FILE = os.path.join(
 # ============================================================
 
 def get_page(url):
+
     response = requests.get(
         url,
         headers=HEADERS,
@@ -158,12 +161,10 @@ def get_latest_news():
         if not href.startswith("/news/"):
             continue
 
-        url = urljoin(
+        return urljoin(
             BASE_URL,
             href
         )
-
-        return url
 
     raise RuntimeError(
         "No se pudo encontrar el último devblog."
@@ -419,10 +420,6 @@ def parse_news(url):
             "images": images
         })
 
-    # --------------------------------------------------------
-    # DEBUG
-    # --------------------------------------------------------
-
     print()
     print("DEBUG metadata:")
     print(f"HTML title: {title}")
@@ -440,7 +437,7 @@ def parse_news(url):
 
 
 # ============================================================
-# GEMINI ANALYSIS
+# GEMINI - ANALYZE ARTICLE
 # ============================================================
 
 def analyze_all_sections(news):
@@ -523,6 +520,203 @@ Contenido:
 
 
 # ============================================================
+# GEMINI - GENERATE X POST
+# ============================================================
+
+def generate_x_post(item):
+
+    prompt = load_prompt(
+        "generate_x_post.txt"
+    )
+
+    replacements = {
+        "{{ARTICLE_TITLE}}":
+            item.get("article_title", ""),
+
+        "{{ARTICLE_DATE}}":
+            item.get("article_date", ""),
+
+        "{{SECTION_TITLE}}":
+            item.get("title", ""),
+
+        "{{AUTHOR}}":
+            item.get("author", ""),
+
+        "{{CONTENT_TYPE}}":
+            item.get("content_type", ""),
+
+        "{{REASON}}":
+            item.get("reason", ""),
+
+        "{{IMPORTANCE}}":
+            str(item.get("importance", "")),
+
+        "{{INTERACTION_POTENTIAL}}":
+            str(item.get("interaction_potential", "")),
+
+        "{{SOCIAL_VALUE}}":
+            str(item.get("social_value", "")),
+
+        "{{CONTENT}}":
+            item.get("content", "")
+    }
+
+    for placeholder, value in replacements.items():
+
+        prompt = prompt.replace(
+            placeholder,
+            value
+        )
+
+    api_key = os.environ.get(
+        "GEMINI_API_KEY"
+    )
+
+    if not api_key:
+
+        raise RuntimeError(
+            "No existe GEMINI_API_KEY."
+        )
+
+    client = genai.Client(
+        api_key=api_key
+    )
+
+    response = client.models.generate_content(
+        model=GEMINI_MODEL,
+        contents=prompt,
+        config={
+            "response_mime_type": "application/json"
+        }
+    )
+
+    result = json.loads(
+        response.text
+    )
+
+    text = result.get(
+        "text"
+    )
+
+    if not text:
+
+        raise RuntimeError(
+            "Gemini no devolvió texto para X."
+        )
+
+    text = text.strip()
+
+    if len(text) > 280:
+
+        raise RuntimeError(
+            f"Gemini generó {len(text)} caracteres. "
+            "El máximo permitido es 280."
+        )
+
+    return text
+
+
+# ============================================================
+# BUFFER
+# ============================================================
+
+def send_to_buffer(message):
+
+    buffer_api_key = os.environ.get(
+        "BUFFER_API_KEY"
+    )
+
+    buffer_channel_id = os.environ.get(
+        "BUFFER_CHANNEL_ID"
+    )
+
+    if not buffer_api_key:
+
+        raise RuntimeError(
+            "No existe BUFFER_API_KEY."
+        )
+
+    if not buffer_channel_id:
+
+        raise RuntimeError(
+            "No existe BUFFER_CHANNEL_ID."
+        )
+
+    query = """
+    mutation CreatePost($input: CreatePostInput!) {
+      createPost(input: $input) {
+        ... on PostActionSuccess {
+          post {
+            id
+            text
+          }
+        }
+
+        ... on MutationError {
+          message
+        }
+      }
+    }
+    """
+
+    response = requests.post(
+        "https://api.buffer.com",
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": (
+                f"Bearer {buffer_api_key}"
+            ),
+        },
+        json={
+            "query": query,
+            "variables": {
+                "input": {
+                    "text": message,
+                    "channelId": buffer_channel_id,
+                    "schedulingType": "automatic",
+                    "mode": "shareNow"
+                }
+            }
+        },
+        timeout=30,
+    )
+
+    response.raise_for_status()
+
+    data = response.json()
+
+    if "errors" in data:
+
+        raise RuntimeError(
+            data["errors"]
+        )
+
+    result = data["data"]["createPost"]
+
+    if "message" in result:
+
+        raise RuntimeError(
+            result["message"]
+        )
+
+    post = result.get(
+        "post"
+    )
+
+    if not post:
+
+        raise RuntimeError(
+            "Buffer no devolvió el post creado."
+        )
+
+    print(
+        "✅ Message sent to X via Buffer."
+    )
+
+    return post
+
+
+# ============================================================
 # CONTENT QUEUE
 # ============================================================
 
@@ -550,10 +744,6 @@ def create_content_queue(
             0
         )
 
-        # ----------------------------------------------------
-        # FILTER
-        # ----------------------------------------------------
-
         if publication_type in (
             "skip",
             "related"
@@ -563,20 +753,12 @@ def create_content_queue(
         if publication_score < MIN_PUBLICATION_SCORE:
             continue
 
-        # ----------------------------------------------------
-        # FIND ORIGINAL SECTION
-        # ----------------------------------------------------
-
         section = sections_by_title.get(
             analysis.get("title")
         )
 
         if not section:
             continue
-
-        # ----------------------------------------------------
-        # CREATE ITEM
-        # ----------------------------------------------------
 
         items.append({
 
@@ -630,10 +812,6 @@ def create_content_queue(
                 ""
             ),
 
-            # ------------------------------------------------
-            # PUBLICATION STATE
-            # ------------------------------------------------
-
             "published": False,
 
             "published_at": None,
@@ -642,18 +820,10 @@ def create_content_queue(
 
             "post_id": None,
 
-            # ------------------------------------------------
-            # GENERATION STATE
-            # ------------------------------------------------
-
             "generated_text": None,
 
             "generated_at": None
         })
-
-    # --------------------------------------------------------
-    # SORT
-    # --------------------------------------------------------
 
     items.sort(
         key=lambda item: (
@@ -665,10 +835,6 @@ def create_content_queue(
         reverse=True
     )
 
-    # --------------------------------------------------------
-    # PRIORITY
-    # --------------------------------------------------------
-
     for index, item in enumerate(
         items,
         start=1
@@ -676,11 +842,7 @@ def create_content_queue(
 
         item["priority"] = index
 
-    # --------------------------------------------------------
-    # QUEUE
-    # --------------------------------------------------------
-
-    queue = {
+    return {
 
         "article": {
             "url": news["url"],
@@ -716,8 +878,6 @@ def create_content_queue(
 
         "items": items
     }
-
-    return queue
 
 
 # ============================================================
@@ -775,31 +935,26 @@ def load_queue():
         if "discord_posted" not in general:
 
             general["discord_posted"] = False
-
             migrated = True
 
         if "discord_posted_at" not in general:
 
             general["discord_posted_at"] = None
-
             migrated = True
 
         if "x_posted" not in general:
 
             general["x_posted"] = False
-
             migrated = True
 
         if "x_posted_at" not in general:
 
             general["x_posted_at"] = None
-
             migrated = True
 
         if "x_post_id" not in general:
 
             general["x_post_id"] = None
-
             migrated = True
 
     # --------------------------------------------------------
@@ -814,37 +969,31 @@ def load_queue():
         if "published" not in item:
 
             item["published"] = False
-
             migrated = True
 
         if "published_at" not in item:
 
             item["published_at"] = None
-
             migrated = True
 
         if "platform" not in item:
 
             item["platform"] = None
-
             migrated = True
 
         if "post_id" not in item:
 
             item["post_id"] = None
-
             migrated = True
 
         if "generated_text" not in item:
 
             item["generated_text"] = None
-
             migrated = True
 
         if "generated_at" not in item:
 
             item["generated_at"] = None
-
             migrated = True
 
     # --------------------------------------------------------
@@ -882,15 +1031,14 @@ def is_same_article(
         {}
     )
 
-    stored_url = article.get(
-        "url"
+    return (
+        article.get("url")
+        == current_url
     )
-
-    return stored_url == current_url
 
 
 # ============================================================
-# NEXT PENDING CONTENT
+# NEXT PENDING ITEM
 # ============================================================
 
 def get_next_pending_item(
@@ -924,86 +1072,148 @@ def get_next_pending_item(
     return pending[0]
 
 
-def send_to_buffer(message):
+# ============================================================
+# PUBLISH NEXT CONTENT
+# ============================================================
 
-    buffer_api_key = os.environ.get("BUFFER_API_KEY")
-    buffer_channel_id = os.environ.get("BUFFER_CHANNEL_ID")
+def publish_next_content(queue):
 
-    if not buffer_api_key:
-        raise RuntimeError(
-            "No existe BUFFER_API_KEY."
-        )
-
-    if not buffer_channel_id:
-        raise RuntimeError(
-            "No existe BUFFER_CHANNEL_ID."
-        )
-
-    query = """
-    mutation CreatePost($input: CreatePostInput!) {
-      createPost(input: $input) {
-        ... on PostActionSuccess {
-          post {
-            id
-            text
-          }
-        }
-
-        ... on MutationError {
-          message
-        }
-      }
-    }
-    """
-
-    response = requests.post(
-        "https://api.buffer.com",
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {buffer_api_key}",
-        },
-        json={
-            "query": query,
-            "variables": {
-                "input": {
-                    "text": message,
-                    "channelId": buffer_channel_id,
-                    "schedulingType": "automatic",
-                    "mode": "shareNow"
-                }
-            }
-        },
-        timeout=30,
+    item = get_next_pending_item(
+        queue
     )
 
-    response.raise_for_status()
+    if item is None:
 
-    data = response.json()
-
-    if "errors" in data:
-        raise RuntimeError(
-            data["errors"]
+        print()
+        print(
+            "No quedan contenidos pendientes."
         )
 
-    result = data["data"]["createPost"]
+        return False
 
-    if "message" in result:
-        raise RuntimeError(
-            result["message"]
-        )
-
-    post = result.get("post")
-
-    if not post:
-        raise RuntimeError(
-            "Buffer no devolvió el post creado."
-        )
+    print()
+    print(
+        "========================================"
+    )
 
     print(
-        "✅ Message sent to X via Buffer."
+        "GENERANDO POST PARA X"
     )
 
-    return post
+    print(
+        "========================================"
+    )
+
+    print(
+        f"Priority: {item['priority']}"
+    )
+
+    print(
+        f"Título: {item['title']}"
+    )
+
+    print(
+        f"Score: {item['publication_score']}"
+    )
+
+    print()
+
+    # --------------------------------------------------------
+    # GENERATE
+    # --------------------------------------------------------
+
+    generated_text = generate_x_post(
+        item
+    )
+
+    print(
+        "Post generado:"
+    )
+
+    print(
+        "----------------------------------------"
+    )
+
+    print(
+        generated_text
+    )
+
+    print(
+        "----------------------------------------"
+    )
+
+    print(
+        f"Caracteres: {len(generated_text)}"
+    )
+
+    print()
+
+    # --------------------------------------------------------
+    # SEND TO BUFFER
+    # --------------------------------------------------------
+
+    print(
+        "Enviando a Buffer..."
+    )
+
+    post = send_to_buffer(
+        generated_text
+    )
+
+    # --------------------------------------------------------
+    # ONLY NOW MARK AS PUBLISHED
+    # --------------------------------------------------------
+
+    now = datetime.now(
+        timezone.utc
+    ).isoformat()
+
+    item["generated_text"] = generated_text
+
+    item["generated_at"] = now
+
+    item["published"] = True
+
+    item["published_at"] = now
+
+    item["platform"] = "x"
+
+    item["post_id"] = post.get(
+        "id"
+    )
+
+    save_json(
+        QUEUE_FILE,
+        queue
+    )
+
+    print()
+
+    print(
+        "========================================"
+    )
+
+    print(
+        "✅ CONTENIDO PUBLICADO"
+    )
+
+    print(
+        "========================================"
+    )
+
+    print(
+        f"Sección: {item['title']}"
+    )
+
+    print(
+        f"Buffer post ID: {item['post_id']}"
+    )
+
+    print(
+        "Estado guardado en content_queue.json."
+    )
+
+    return True
 
 
 # ============================================================
@@ -1040,7 +1250,7 @@ def main():
     )
 
     # --------------------------------------------------------
-    # LOAD CURRENT QUEUE
+    # LOAD QUEUE
     # --------------------------------------------------------
 
     queue = load_queue()
@@ -1061,10 +1271,6 @@ def main():
 
         print()
 
-        # ----------------------------------------------------
-        # PARSE
-        # ----------------------------------------------------
-
         news = parse_news(
             current_url
         )
@@ -1073,10 +1279,6 @@ def main():
             LATEST_NEWS_FILE,
             news
         )
-
-        # ----------------------------------------------------
-        # GEMINI
-        # ----------------------------------------------------
 
         print()
         print(
@@ -1092,10 +1294,6 @@ def main():
             analyses
         )
 
-        # ----------------------------------------------------
-        # CREATE QUEUE
-        # ----------------------------------------------------
-
         queue = create_content_queue(
             news,
             analyses
@@ -1106,12 +1304,7 @@ def main():
             queue
         )
 
-        # ----------------------------------------------------
-        # RESULT
-        # ----------------------------------------------------
-
         print()
-
         print(
             "========================================"
         )
@@ -1140,30 +1333,14 @@ def main():
         )
 
         print()
-
         print(
-            "Publicación general:"
+            "⚠️ El anuncio general todavía "
+            "no está conectado."
         )
 
         print(
-            f"Discord: "
-            f"{queue['general_publication']['discord_posted']}"
-        )
-
-        print(
-            f"X: "
-            f"{queue['general_publication']['x_posted']}"
-        )
-
-        print()
-
-        print(
-            "⚠️ Todavía no se publica "
-            "ningún contenido."
-        )
-
-        print(
-            "El ciclo quedó preparado."
+            "No se publica contenido de sección "
+            "en la misma ejecución."
         )
 
         return
@@ -1173,7 +1350,6 @@ def main():
     # ========================================================
 
     print()
-
     print(
         "♻️ PATCH ACTUAL YA ESTÁ EN COLA"
     )
@@ -1182,10 +1358,6 @@ def main():
         f"Patch: "
         f"{queue['article']['title']}"
     )
-
-    # --------------------------------------------------------
-    # GENERAL PUBLICATION STATE
-    # --------------------------------------------------------
 
     general = queue.get(
         "general_publication",
@@ -1205,92 +1377,11 @@ def main():
     )
 
     # --------------------------------------------------------
-    # NEXT ITEM
+    # PUBLISH ONE SECTION
     # --------------------------------------------------------
 
-    next_item = get_next_pending_item(
+    publish_next_content(
         queue
-    )
-
-    # ========================================================
-    # CYCLE COMPLETED
-    # ========================================================
-
-    if next_item is None:
-
-        print()
-
-        print(
-            "========================================"
-        )
-
-        print(
-            "CICLO COMPLETADO"
-        )
-
-        print(
-            "========================================"
-        )
-
-        print(
-            "No quedan secciones pendientes "
-            "para este patch."
-        )
-
-        return
-
-    # ========================================================
-    # NEXT CONTENT
-    # ========================================================
-
-    print()
-
-    print(
-        "========================================"
-    )
-
-    print(
-        "SIGUIENTE CONTENIDO PENDIENTE"
-    )
-
-    print(
-        "========================================"
-    )
-
-    print(
-        f"Priority: "
-        f"{next_item['priority']}"
-    )
-
-    print(
-        f"Título: "
-        f"{next_item['title']}"
-    )
-
-    print(
-        f"Score: "
-        f"{next_item['publication_score']}"
-    )
-
-    print(
-        f"Tipo: "
-        f"{next_item['content_type']}"
-    )
-
-    print(
-        f"Publicado: "
-        f"{next_item['published']}"
-    )
-
-    print()
-
-    print(
-        "⚠️ Todavía NO se marca como publicado."
-    )
-
-    print(
-        "La publicación real se agregará "
-        "en el siguiente paso."
     )
 
 
