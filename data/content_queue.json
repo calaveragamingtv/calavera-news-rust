@@ -147,10 +147,14 @@
     }
   ],
   "general_publication": {
-    "discord_posted": false,
-    "discord_posted_at": null,
-    "x_posted": false,
-    "x_posted_at": null,
-    "x_post_id": null
+    "discord_posted": true,
+    "discord_posted_at": "2026-10-07T22:16:30.982674+00:00",
+    "x_posted": true,
+    "x_posted_at": "2026-10-07T22:16:24.758100+00:00",
+    "x_post_id": "6ac6c4b757f9bd074d1b27ed",
+    "x_text": "Ya salió el Livestock Update. Arrancan las vacas y ovejas con leche, lana y genética propia. Además, el helipad de Bandit Camp arranca roto y pide recursos con martillo para revivir la venta de copters. ¿Quién pone los materiales para volar primero?",
+    "discord_text": "@everyone\n\nYa está disponible el Livestock Update con cambios clave para la economía y la movilidad de la wipe:\n\n• **Ganadería:** Llegan las vacas y ovejas con genética propia, producción de leche, lana y dung.\n• **Bandit Camp:** El helipad del Air Wolf arranca en mal estado y exige un esfuerzo comunitario a martillazos para habilitar la venta de vehículos.\n• **Render Pipeline:** Migramos al nuevo Rust Render Pipeline propio para mejorar el rendimiento gráfico general.\n\n¿Qué novedad les cambia más la forma de jugar este mes?",
+    "generated": true,
+    "generated_at": "2026-10-07T22:16:23.348416+00:00"
   }
 }
