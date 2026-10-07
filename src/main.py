@@ -215,7 +215,13 @@ def main():
         ensure_ascii=False
     ))
     
-    test_gemini()
+    if news["sections"]:
+        analysis = analyze_section(news["sections"][2])
+    
+        print("\n==============================")
+        print("      GEMINI ANALYSIS")
+        print("==============================")
+        print(analysis)
 
 
 if __name__ == "__main__":
