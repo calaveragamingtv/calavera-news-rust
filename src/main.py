@@ -21,7 +21,9 @@ QUEUE_FILE = os.path.join(DATA_DIR, "content_queue.json")
 
 ANALYZE_PROMPT_FILE = "prompt/analyze_devblog_sections.txt"
 X_POST_PROMPT_FILE = "prompt/generate_x_post.txt"
-GENERAL_ANNOUNCEMENT_PROMPT_FILE = "prompt/generate_general_announcement.txt"
+GENERAL_ANNOUNCEMENT_PROMPT_FILE = (
+    "prompt/generate_general_announcement.txt"
+)
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 BUFFER_API_KEY = os.getenv("BUFFER_API_KEY")
@@ -56,7 +58,12 @@ def save_json(path, data):
     ensure_data_dir()
 
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+        json.dump(
+            data,
+            f,
+            ensure_ascii=False,
+            indent=2
+        )
 
 
 def read_prompt(path):
@@ -68,8 +75,18 @@ def extract_json(text):
     text = text.strip()
 
     if text.startswith("```"):
-        text = re.sub(r"^```(?:json)?", "", text)
-        text = re.sub(r"```$", "", text)
+        text = re.sub(
+            r"^```(?:json)?",
+            "",
+            text
+        )
+
+        text = re.sub(
+            r"```$",
+            "",
+            text
+        )
+
         text = text.strip()
 
     return json.loads(text)
@@ -81,9 +98,13 @@ def extract_json(text):
 
 def get_gemini_client():
     if not GEMINI_API_KEY:
-        raise RuntimeError("Falta GEMINI_API_KEY")
+        raise RuntimeError(
+            "Falta GEMINI_API_KEY"
+        )
 
-    return genai.Client(api_key=GEMINI_API_KEY)
+    return genai.Client(
+        api_key=GEMINI_API_KEY
+    )
 
 
 def ask_gemini(prompt):
@@ -95,7 +116,9 @@ def ask_gemini(prompt):
     )
 
     if not response.text:
-        raise RuntimeError("Gemini devolvió una respuesta vacía")
+        raise RuntimeError(
+            "Gemini devolvió una respuesta vacía"
+        )
 
     return response.text.strip()
 
@@ -105,14 +128,25 @@ def ask_gemini(prompt):
 # ============================================================
 
 def get_latest_news():
-    print("Consultando noticias de Rust...")
+    print(
+        "Consultando noticias de Rust..."
+    )
 
-    response = requests.get(NEWS_URL, timeout=30)
+    response = requests.get(
+        NEWS_URL,
+        timeout=30
+    )
+
     response.raise_for_status()
 
-    soup = BeautifulSoup(response.text, "html.parser")
+    soup = BeautifulSoup(
+        response.text,
+        "html.parser"
+    )
 
-    for link in soup.select('a[href*="/news/"]'):
+    for link in soup.select(
+        'a[href*="/news/"]'
+    ):
         href = link.get("href")
 
         if not href:
@@ -124,34 +158,62 @@ def get_latest_news():
         if not href.startswith("/news/"):
             continue
 
-        url = urljoin(BASE_URL, href)
+        url = urljoin(
+            BASE_URL,
+            href
+        )
 
-        print(f"Última noticia detectada: {url}")
+        print(
+            f"Última noticia detectada: {url}"
+        )
 
         return url
 
-    raise RuntimeError("No se pudo encontrar la última noticia")
+    raise RuntimeError(
+        "No se pudo encontrar la última noticia"
+    )
 
 
 def scrape_article(url):
-    print(f"Scrapeando artículo: {url}")
+    print(
+        f"Scrapeando artículo: {url}"
+    )
 
-    response = requests.get(url, timeout=30)
+    response = requests.get(
+        url,
+        timeout=30
+    )
+
     response.raise_for_status()
 
     html = response.text
-    soup = BeautifulSoup(html, "html.parser")
+
+    soup = BeautifulSoup(
+        html,
+        "html.parser"
+    )
 
     # --------------------------------------------------------
-    # Metadata
+    # METADATA
     # --------------------------------------------------------
 
-    html_title = soup.title.get_text(" ", strip=True) if soup.title else ""
+    html_title = (
+        soup.title.get_text(
+            " ",
+            strip=True
+        )
+        if soup.title
+        else ""
+    )
 
     article_title = html_title
 
-    if article_title.endswith(" - News - Rust"):
-        article_title = article_title[:-len(" - News - Rust")].strip()
+    if article_title.endswith(
+        " - News - Rust"
+    ):
+        article_title = article_title[
+            :-len(" - News - Rust")
+        ].strip()
 
     date_patterns = [
         r"\b\d{1,2}\s+[A-Za-z]+\s+\d{4}\b",
@@ -162,7 +224,10 @@ def scrape_article(url):
     article_date = None
 
     for pattern in date_patterns:
-        match = re.search(pattern, html)
+        match = re.search(
+            pattern,
+            html
+        )
 
         if match:
             article_date = match.group(0)
@@ -171,30 +236,45 @@ def scrape_article(url):
     article_type = "DEVBLOG"
 
     # --------------------------------------------------------
-    # Sections
+    # SECCIONES
     # --------------------------------------------------------
 
     sections = []
 
-    blocks = soup.select(".news-section-block")
+    blocks = soup.select(
+        ".news-section-block"
+    )
 
     for block in blocks:
-        header = block.select_one(".section-header")
+        header = block.select_one(
+            ".section-header"
+        )
 
         if not header:
             continue
 
-        title_element = header.select_one(".title")
-        author_element = header.select_one(".author")
+        title_element = header.select_one(
+            ".title"
+        )
+
+        author_element = header.select_one(
+            ".author"
+        )
 
         title = (
-            title_element.get_text(" ", strip=True)
+            title_element.get_text(
+                " ",
+                strip=True
+            )
             if title_element
             else ""
         )
 
         author = (
-            author_element.get_text(" ", strip=True)
+            author_element.get_text(
+                " ",
+                strip=True
+            )
             if author_element
             else ""
         )
@@ -205,7 +285,9 @@ def scrape_article(url):
         if title.strip() == "⠀":
             continue
 
-        content_element = block.select_one(".content")
+        content_element = block.select_one(
+            ".content"
+        )
 
         if not content_element:
             continue
@@ -217,13 +299,18 @@ def scrape_article(url):
 
         images = []
 
-        for img in content_element.select("img"):
+        for img in content_element.select(
+            "img"
+        ):
             src = img.get("src")
 
             if not src:
                 continue
 
-            image_url = urljoin(BASE_URL, src)
+            image_url = urljoin(
+                BASE_URL,
+                src
+            )
 
             if image_url not in images:
                 images.append(image_url)
@@ -237,13 +324,24 @@ def scrape_article(url):
 
     print()
     print("DEBUG metadata:")
-    print(f"HTML title: {html_title}")
-    print("h1: NO ENCONTRADO")
-    print(f"Fecha detectada: {article_date}")
-    print(f"Tipo detectado: {article_type}")
-    print(f"Secciones encontradas: {len(sections)}")
-
-    print(f"Título detectado: {article_title}")
+    print(
+        f"HTML title: {html_title}"
+    )
+    print(
+        "h1: NO ENCONTRADO"
+    )
+    print(
+        f"Fecha detectada: {article_date}"
+    )
+    print(
+        f"Tipo detectado: {article_type}"
+    )
+    print(
+        f"Secciones encontradas: {len(sections)}"
+    )
+    print(
+        f"Título detectado: {article_title}"
+    )
 
     return {
         "url": url,
@@ -259,11 +357,16 @@ def scrape_article(url):
 # ============================================================
 
 def analyze_sections(article):
-    prompt_template = read_prompt(ANALYZE_PROMPT_FILE)
+    prompt_template = read_prompt(
+        ANALYZE_PROMPT_FILE
+    )
 
     sections_text = []
 
-    for index, section in enumerate(article["sections"], start=1):
+    for index, section in enumerate(
+        article["sections"],
+        start=1
+    ):
         sections_text.append(
             f"""
 SECCIÓN {index}
@@ -279,22 +382,47 @@ Contenido:
 """.strip()
         )
 
-    sections_text = "\n\n".join(sections_text)
+    sections_text = "\n\n".join(
+        sections_text
+    )
 
-    prompt = prompt_template \
-        .replace("{{ARTICLE_TITLE}}", article["title"]) \
-        .replace("{{ARTICLE_DATE}}", article["date"] or "") \
-        .replace("{{ARTICLE_TYPE}}", article["type"]) \
-        .replace("{{SECTIONS}}", sections_text)
+    prompt = (
+        prompt_template
+        .replace(
+            "{{ARTICLE_TITLE}}",
+            article["title"]
+        )
+        .replace(
+            "{{ARTICLE_DATE}}",
+            article["date"] or ""
+        )
+        .replace(
+            "{{ARTICLE_TYPE}}",
+            article["type"]
+        )
+        .replace(
+            "{{SECTIONS}}",
+            sections_text
+        )
+    )
 
     print()
-    print("Analizando secciones con Gemini...")
+    print(
+        "Analizando secciones con Gemini..."
+    )
 
-    raw = ask_gemini(prompt)
+    raw = ask_gemini(
+        prompt
+    )
 
-    analysis = extract_json(raw)
+    analysis = extract_json(
+        raw
+    )
 
-    if not isinstance(analysis, list):
+    if not isinstance(
+        analysis,
+        list
+    ):
         raise RuntimeError(
             "Gemini no devolvió una lista de análisis"
         )
@@ -306,15 +434,25 @@ Contenido:
 # ULTIMOS POSTS
 # ============================================================
 
-def get_last_posts(queue, limit=10):
+def get_last_posts(
+    queue,
+    limit=10
+):
     posts = []
 
-    for item in queue.get("items", []):
-        generated_text = item.get("generated_text")
+    for item in queue.get(
+        "items",
+        []
+    ):
+        generated_text = item.get(
+            "generated_text"
+        )
 
         if generated_text:
             posts.append({
-                "title": item.get("title"),
+                "title": item.get(
+                    "title"
+                ),
                 "text": generated_text
             })
 
@@ -323,11 +461,16 @@ def get_last_posts(queue, limit=10):
 
 def format_last_posts(posts):
     if not posts:
-        return "No hay posts publicados anteriormente."
+        return (
+            "No hay posts publicados anteriormente."
+        )
 
     result = []
 
-    for index, post in enumerate(posts, start=1):
+    for index, post in enumerate(
+        posts,
+        start=1
+    ):
         result.append(
             f"""
 POST {index}
@@ -340,14 +483,19 @@ Texto:
 """.strip()
         )
 
-    return "\n\n".join(result)
+    return "\n\n".join(
+        result
+    )
 
 
 # ============================================================
 # CREAR COLA
 # ============================================================
 
-def build_content_queue(article, analysis):
+def build_content_queue(
+    article,
+    analysis
+):
     minimum_score = 75
 
     analysis_by_title = {
@@ -361,7 +509,9 @@ def build_content_queue(article, analysis):
     priority = 1
 
     for section in article["sections"]:
-        result = analysis_by_title.get(section["title"])
+        result = analysis_by_title.get(
+            section["title"]
+        )
 
         if not result:
             continue
@@ -372,7 +522,10 @@ def build_content_queue(article, analysis):
         )
 
         score = int(
-            result.get("publication_score", 0)
+            result.get(
+                "publication_score",
+                0
+            )
         )
 
         if publication_type != "standalone":
@@ -392,23 +545,30 @@ def build_content_queue(article, analysis):
             "content": section["content"],
             "images": section["images"],
 
-            "importance": result.get("importance", 0),
+            "importance": result.get(
+                "importance",
+                0
+            ),
+
             "interaction_potential": result.get(
                 "interaction_potential",
                 0
             ),
+
             "social_value": result.get(
                 "social_value",
                 0
             ),
 
             "publication_score": score,
+
             "recommended": result.get(
                 "recommended",
                 False
             ),
 
             "publication_type": publication_type,
+
             "content_type": result.get(
                 "content_type",
                 "news"
@@ -442,6 +602,7 @@ def build_content_queue(article, analysis):
 
         "general_publication": {
             "generated": False,
+
             "x_text": None,
             "discord_text": None,
 
@@ -457,8 +618,12 @@ def build_content_queue(article, analysis):
 
         "selection": {
             "minimum_publication_score": minimum_score,
-            "total_sections": len(article["sections"]),
-            "selected_sections": len(queue_items)
+            "total_sections": len(
+                article["sections"]
+            ),
+            "selected_sections": len(
+                queue_items
+            )
         },
 
         "items": queue_items
@@ -471,7 +636,9 @@ def build_content_queue(article, analysis):
 # ANUNCIO GENERAL
 # ============================================================
 
-def generate_general_announcement(queue):
+def generate_general_announcement(
+    queue
+):
     prompt_template = read_prompt(
         GENERAL_ANNOUNCEMENT_PROMPT_FILE
     )
@@ -497,41 +664,60 @@ Contenido:
 """.strip()
         )
 
-    sections_text = "\n\n".join(selected_sections)
+    sections_text = "\n\n".join(
+        selected_sections
+    )
 
-    last_posts = get_last_posts(queue)
+    last_posts = get_last_posts(
+        queue
+    )
 
-    prompt = prompt_template \
+    prompt = (
+        prompt_template
         .replace(
             "{{ARTICLE_TITLE}}",
             article["title"]
-        ) \
+        )
         .replace(
             "{{ARTICLE_DATE}}",
             article.get("date") or ""
-        ) \
+        )
         .replace(
             "{{ARTICLE_TYPE}}",
             article.get("type") or ""
-        ) \
+        )
         .replace(
             "{{LAST_POSTS}}",
-            format_last_posts(last_posts)
-        ) \
+            format_last_posts(
+                last_posts
+            )
+        )
         .replace(
             "{{SECTIONS}}",
             sections_text
         )
+    )
 
     print()
-    print("Generando anuncio general...")
+    print(
+        "Generando anuncio general..."
+    )
 
-    raw = ask_gemini(prompt)
+    raw = ask_gemini(
+        prompt
+    )
 
-    result = extract_json(raw)
+    result = extract_json(
+        raw
+    )
 
-    x_text = result.get("x_text")
-    discord_text = result.get("discord_text")
+    x_text = result.get(
+        "x_text"
+    )
+
+    discord_text = result.get(
+        "discord_text"
+    )
 
     if not x_text:
         raise RuntimeError(
@@ -553,12 +739,19 @@ Contenido:
 # BUFFER
 # ============================================================
 
-def buffer_create_post(text, image_url=None):
+def buffer_create_post(
+    text,
+    image_url=None
+):
     if not BUFFER_API_KEY:
-        raise RuntimeError("Falta BUFFER_API_KEY")
+        raise RuntimeError(
+            "Falta BUFFER_API_KEY"
+        )
 
     if not BUFFER_CHANNEL_ID:
-        raise RuntimeError("Falta BUFFER_CHANNEL_ID")
+        raise RuntimeError(
+            "Falta BUFFER_CHANNEL_ID"
+        )
 
     mutation = """
     mutation CreatePost($input: CreatePostInput!) {
@@ -583,7 +776,14 @@ def buffer_create_post(text, image_url=None):
 
     input_data = {
         "text": text,
-        "channelId": BUFFER_CHANNEL_ID
+        "channelId": BUFFER_CHANNEL_ID,
+
+        # Publicar inmediatamente
+        "mode": "shareNow",
+
+        # Buffer maneja automáticamente
+        # la publicación
+        "schedulingType": "automatic"
     }
 
     if image_url:
@@ -598,7 +798,9 @@ def buffer_create_post(text, image_url=None):
     response = requests.post(
         "https://api.buffer.com",
         headers={
-            "Authorization": f"Bearer {BUFFER_API_KEY}",
+            "Authorization": (
+                f"Bearer {BUFFER_API_KEY}"
+            ),
             "Content-Type": "application/json"
         },
         json={
@@ -616,35 +818,42 @@ def buffer_create_post(text, image_url=None):
 
     if data.get("errors"):
         raise RuntimeError(
-            f"Buffer GraphQL error: {data['errors']}"
+            f"Buffer GraphQL error: "
+            f"{data['errors']}"
         )
 
-    create_post = data.get(
-        "data",
-        {}
-    ).get(
-        "createPost"
+    create_post = (
+        data
+        .get("data", {})
+        .get("createPost")
     )
 
     if not create_post:
         raise RuntimeError(
-            f"Buffer no devolvió createPost: {data}"
+            f"Buffer no devolvió createPost: "
+            f"{data}"
         )
 
-    post = create_post.get("post")
+    post = create_post.get(
+        "post"
+    )
 
     if post:
         return post
 
-    message = create_post.get("message")
+    message = create_post.get(
+        "message"
+    )
 
     if message:
         raise RuntimeError(
-            f"Buffer rechazó el post: {message}"
+            f"Buffer rechazó el post: "
+            f"{message}"
         )
 
     raise RuntimeError(
-        f"Respuesta inesperada de Buffer: {data}"
+        f"Respuesta inesperada de Buffer: "
+        f"{data}"
     )
 
 
@@ -672,10 +881,12 @@ def publish_discord(text):
 
 
 # ============================================================
-# ANUNCIO GENERAL
+# PROCESAR ANUNCIO GENERAL
 # ============================================================
 
-def process_general_announcement(queue):
+def process_general_announcement(
+    queue
+):
     publication = queue.setdefault(
         "general_publication",
         {
@@ -695,37 +906,61 @@ def process_general_announcement(queue):
     )
 
     # --------------------------------------------------------
-    # Generar una sola vez
+    # GENERAR UNA SOLA VEZ
     # --------------------------------------------------------
 
-    if not publication.get("generated"):
-        result = generate_general_announcement(queue)
+    if not publication.get(
+        "generated"
+    ):
+        result = generate_general_announcement(
+            queue
+        )
 
-        publication["x_text"] = result["x_text"]
-        publication["discord_text"] = result["discord_text"]
+        publication["x_text"] = result[
+            "x_text"
+        ]
+
+        publication["discord_text"] = result[
+            "discord_text"
+        ]
+
         publication["generated"] = True
         publication["generated_at"] = now_iso()
 
-        save_json(QUEUE_FILE, queue)
+        save_json(
+            QUEUE_FILE,
+            queue
+        )
 
-        print()
-        print("ANUNCIO GENERAL - X")
-        print()
-        print(publication["x_text"])
-
-        print()
-        print("ANUNCIO GENERAL - DISCORD")
-        print()
-        print(publication["discord_text"])
-
-    # --------------------------------------------------------
-    # Publicar X
-    # --------------------------------------------------------
-
-    if not publication.get("x_posted"):
         print()
         print(
-            "Publicando anuncio general en X mediante Buffer..."
+            "ANUNCIO GENERAL - X"
+        )
+        print()
+        print(
+            publication["x_text"]
+        )
+
+        print()
+        print(
+            "ANUNCIO GENERAL - DISCORD"
+        )
+        print()
+        print(
+            publication["discord_text"]
+        )
+
+    # --------------------------------------------------------
+    # PUBLICAR X
+    # --------------------------------------------------------
+
+    if not publication.get(
+        "x_posted"
+    ):
+        print()
+        print(
+            "Publicando anuncio general "
+            "en X mediante Buffer..."
         )
 
         post = buffer_create_post(
@@ -734,23 +969,31 @@ def process_general_announcement(queue):
 
         publication["x_posted"] = True
         publication["x_posted_at"] = now_iso()
-        publication["x_post_id"] = post.get("id")
+        publication["x_post_id"] = post.get(
+            "id"
+        )
 
-        save_json(QUEUE_FILE, queue)
+        save_json(
+            QUEUE_FILE,
+            queue
+        )
 
         print(
-            f"Anuncio general publicado en X. "
-            f"ID: {post.get('id')}"
+            "Anuncio general publicado "
+            f"en X. ID: {post.get('id')}"
         )
 
     # --------------------------------------------------------
-    # Publicar Discord
+    # PUBLICAR DISCORD
     # --------------------------------------------------------
 
-    if not publication.get("discord_posted"):
+    if not publication.get(
+        "discord_posted"
+    ):
         print()
         print(
-            "Publicando anuncio general en Discord..."
+            "Publicando anuncio general "
+            "en Discord..."
         )
 
         publish_discord(
@@ -760,15 +1003,25 @@ def process_general_announcement(queue):
         publication["discord_posted"] = True
         publication["discord_posted_at"] = now_iso()
 
-        save_json(QUEUE_FILE, queue)
+        save_json(
+            QUEUE_FILE,
+            queue
+        )
 
         print(
-            "Anuncio general publicado en Discord."
+            "Anuncio general publicado "
+            "en Discord."
         )
 
     return (
-        publication.get("x_posted", False)
-        and publication.get("discord_posted", False)
+        publication.get(
+            "x_posted",
+            False
+        )
+        and publication.get(
+            "discord_posted",
+            False
+        )
     )
 
 
@@ -776,59 +1029,79 @@ def process_general_announcement(queue):
 # GENERAR POST DE SECCION
 # ============================================================
 
-def generate_x_post(queue, item):
+def generate_x_post(
+    queue,
+    item
+):
     prompt_template = read_prompt(
         X_POST_PROMPT_FILE
     )
 
     article = queue["article"]
 
-    last_posts = get_last_posts(queue)
+    last_posts = get_last_posts(
+        queue
+    )
 
-    prompt = prompt_template \
+    prompt = (
+        prompt_template
         .replace(
             "{{ARTICLE_TITLE}}",
             article["title"]
-        ) \
+        )
         .replace(
             "{{ARTICLE_DATE}}",
             article.get("date") or ""
-        ) \
+        )
         .replace(
             "{{ARTICLE_TYPE}}",
             article.get("type") or ""
-        ) \
+        )
         .replace(
             "{{LAST_POSTS}}",
-            format_last_posts(last_posts)
-        ) \
+            format_last_posts(
+                last_posts
+            )
+        )
         .replace(
             "{{SECTION_TITLE}}",
             item["title"]
-        ) \
+        )
         .replace(
             "{{SECTION_CONTENT}}",
             item["content"]
         )
+    )
 
     print()
     print(
-        f"Generando post X para: {item['title']}"
+        f"Generando post X para: "
+        f"{item['title']}"
     )
 
-    raw = ask_gemini(prompt)
+    raw = ask_gemini(
+        prompt
+    )
 
-    result = extract_json(raw)
+    result = extract_json(
+        raw
+    )
 
-    text = result.get("text") or result.get("x_text")
+    text = (
+        result.get("text")
+        or result.get("x_text")
+    )
 
     if not text:
         raise RuntimeError(
-            "Gemini no devolvió texto para el post X"
+            "Gemini no devolvió texto "
+            "para el post X"
         )
 
     print()
-    print("Post generado:")
+    print(
+        "Post generado:"
+    )
     print(text)
 
     return text
@@ -838,8 +1111,12 @@ def generate_x_post(queue, item):
 # IMAGEN
 # ============================================================
 
-def get_first_valid_image(item):
-    images = item.get("images") or []
+def get_first_valid_image(
+    item
+):
+    images = item.get(
+        "images"
+    ) or []
 
     for image_url in images:
         if not image_url:
@@ -865,19 +1142,28 @@ def get_first_valid_image(item):
 # PUBLICAR SIGUIENTE CONTENIDO
 # ============================================================
 
-def publish_next_content(queue):
-    items = queue.get("items", [])
+def publish_next_content(
+    queue
+):
+    items = queue.get(
+        "items",
+        []
+    )
 
     unpublished = [
         item
         for item in items
-        if not item.get("published", False)
+        if not item.get(
+            "published",
+            False
+        )
     ]
 
     if not unpublished:
         print()
         print(
-            "No quedan secciones pendientes para publicar."
+            "No quedan secciones pendientes "
+            "para publicar."
         )
 
         return False
@@ -893,20 +1179,25 @@ def publish_next_content(queue):
 
     print()
     print(
-        f"Próximo contenido:"
+        "Próximo contenido:"
     )
+
     print(
         f"Título: {item['title']}"
     )
+
     print(
-        f"Score: {item['publication_score']}"
+        f"Score: "
+        f"{item['publication_score']}"
     )
+
     print(
-        f"Prioridad: {item['priority']}"
+        f"Prioridad: "
+        f"{item['priority']}"
     )
 
     # --------------------------------------------------------
-    # Generar
+    # GENERAR
     # --------------------------------------------------------
 
     generated_text = generate_x_post(
@@ -915,40 +1206,51 @@ def publish_next_content(queue):
     )
 
     # --------------------------------------------------------
-    # Buscar imagen
+    # BUSCAR IMAGEN
     # --------------------------------------------------------
 
-    image_url = get_first_valid_image(item)
+    image_url = get_first_valid_image(
+        item
+    )
 
     if image_url:
         print()
-        print("Imagen encontrada:")
+        print(
+            "Imagen encontrada:"
+        )
         print(image_url)
+
     else:
         print()
-        print("No se encontró una imagen válida.")
+        print(
+            "No se encontró una imagen válida."
+        )
 
     # --------------------------------------------------------
-    # Publicar
+    # PUBLICAR
     # --------------------------------------------------------
 
     print()
-    print("Publicando mediante Buffer...")
+    print(
+        "Publicando mediante Buffer..."
+    )
 
     post = buffer_create_post(
         generated_text,
         image_url=image_url
     )
 
-    post_id = post.get("id")
+    post_id = post.get(
+        "id"
+    )
 
     print(
-        f"Publicado correctamente en Buffer. "
-        f"ID: {post_id}"
+        "Publicado correctamente "
+        f"en Buffer. ID: {post_id}"
     )
 
     # --------------------------------------------------------
-    # Marcar SOLO después del éxito
+    # MARCAR SOLO DESPUES DEL EXITO
     # --------------------------------------------------------
 
     item["published"] = True
@@ -994,13 +1296,20 @@ def main():
     # ========================================================
 
     current_article_url = (
-        queue.get("article", {}).get("url")
+        queue
+        .get("article", {})
+        .get("url")
     )
 
     if current_article_url != latest_url:
         print()
-        print("Nuevo artículo detectado.")
-        print(latest_url)
+        print(
+            "Nuevo artículo detectado."
+        )
+
+        print(
+            latest_url
+        )
 
         article = scrape_article(
             latest_url
@@ -1041,12 +1350,12 @@ def main():
         )
 
         print(
-            f"Secciones seleccionadas: "
+            "Secciones seleccionadas: "
             f"{len(queue['items'])}"
         )
 
         # ----------------------------------------------------
-        # DIA 1:
+        # DIA 1
         # SOLO ANUNCIO GENERAL
         # ----------------------------------------------------
 
@@ -1064,8 +1373,8 @@ def main():
 
         print()
         print(
-            "La primera sección queda para "
-            "la próxima ejecución."
+            "La primera sección queda "
+            "para la próxima ejecución."
         )
 
         return
@@ -1075,16 +1384,19 @@ def main():
     # ========================================================
 
     print()
-    print("Patch ya procesado.")
+    print(
+        "Patch ya procesado."
+    )
 
     if not queue:
         print(
             "No existe una cola válida."
         )
+
         return
 
     # ========================================================
-    # COMPLETAR ANUNCIO GENERAL SI FALTA
+    # COMPLETAR ANUNCIO GENERAL
     # ========================================================
 
     publication = queue.get(
@@ -1093,7 +1405,10 @@ def main():
     )
 
     general_complete = (
-        publication.get("x_posted", False)
+        publication.get(
+            "x_posted",
+            False
+        )
         and publication.get(
             "discord_posted",
             False
@@ -1120,8 +1435,8 @@ def main():
             )
 
             print(
-                "La primera sección queda para "
-                "la próxima ejecución."
+                "La primera sección queda "
+                "para la próxima ejecución."
             )
 
         return
@@ -1130,7 +1445,9 @@ def main():
     # CONTENIDO DIARIO
     # ========================================================
 
-    publish_next_content(queue)
+    publish_next_content(
+        queue
+    )
 
 
 if __name__ == "__main__":
