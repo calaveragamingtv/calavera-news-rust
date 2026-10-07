@@ -26,7 +26,6 @@ HEADERS = {
 
 GEMINI_MODEL = "gemini-3.5-flash-lite"
 MIN_PUBLICATION_SCORE = 75
-BUFFER_CHANNEL_ID = "6a987c1f065799be4676bb2a"
 
 BASE_DIR = os.path.dirname(
     os.path.dirname(
@@ -923,6 +922,88 @@ def get_next_pending_item(
     )
 
     return pending[0]
+
+
+def send_to_buffer(message):
+
+    buffer_api_key = os.environ.get("BUFFER_API_KEY")
+    buffer_channel_id = os.environ.get("BUFFER_CHANNEL_ID")
+
+    if not buffer_api_key:
+        raise RuntimeError(
+            "No existe BUFFER_API_KEY."
+        )
+
+    if not buffer_channel_id:
+        raise RuntimeError(
+            "No existe BUFFER_CHANNEL_ID."
+        )
+
+    query = """
+    mutation CreatePost($input: CreatePostInput!) {
+      createPost(input: $input) {
+        ... on PostActionSuccess {
+          post {
+            id
+            text
+          }
+        }
+
+        ... on MutationError {
+          message
+        }
+      }
+    }
+    """
+
+    response = requests.post(
+        "https://api.buffer.com",
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {buffer_api_key}",
+        },
+        json={
+            "query": query,
+            "variables": {
+                "input": {
+                    "text": message,
+                    "channelId": buffer_channel_id,
+                    "schedulingType": "automatic",
+                    "mode": "shareNow"
+                }
+            }
+        },
+        timeout=30,
+    )
+
+    response.raise_for_status()
+
+    data = response.json()
+
+    if "errors" in data:
+        raise RuntimeError(
+            data["errors"]
+        )
+
+    result = data["data"]["createPost"]
+
+    if "message" in result:
+        raise RuntimeError(
+            result["message"]
+        )
+
+    post = result.get("post")
+
+    if not post:
+        raise RuntimeError(
+            "Buffer no devolvió el post creado."
+        )
+
+    print(
+        "✅ Message sent to X via Buffer."
+    )
+
+    return post
 
 
 # ============================================================
