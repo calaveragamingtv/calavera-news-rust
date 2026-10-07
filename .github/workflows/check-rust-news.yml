@@ -36,9 +36,10 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
+      
           git add data/latest_news.json data/news_analysis.json data/content_queue.json
-
+      
           git diff --cached --quiet || git commit -m "Update latest Rust news"
-
-          git push
+      
+          git pull --rebase origin main
+          git push origin main
