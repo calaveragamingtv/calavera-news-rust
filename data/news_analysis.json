@@ -8,241 +8,265 @@
       "title": "LIVESTOCK",
       "importance": 10,
       "interaction_potential": 10,
+      "social_value": 10,
       "recommended": true,
       "priority": 1,
       "publication_type": "standalone",
       "content_type": "news",
-      "reason": "¡Llegan las vacas y ovejas a Rust! Es una de las mecánicas de granja más grandes jamás añadidas, con genética, crafteo y interacción con la navmesh de las bases."
+      "reason": "La llegada de vacas y ovejas cambia por completo la dinámica del juego pacífico y el roleplay, agregando mecánicas de genética y abono que impactarán a todos los clanes y granjeros."
     },
     {
       "title": "Livestock economy",
-      "importance": 8,
-      "interaction_potential": 8,
-      "recommended": false,
-      "priority": 12,
+      "importance": 9,
+      "interaction_potential": 9,
+      "social_value": 9,
+      "recommended": true,
+      "priority": 2,
       "publication_type": "related",
       "content_type": "fact",
-      "reason": "Detalla la economía de los animales en los establos. Está fuertemente ligado al anuncio principal de livestock y se puede mencionar en conjunto."
+      "reason": "Explica el sistema comercial con los establos y cómo sacarle provecho económico a la crianza de animales y la lana."
     },
     {
       "title": "Milk",
-      "importance": 8,
-      "interaction_potential": 8,
+      "importance": 9,
+      "interaction_potential": 9,
+      "social_value": 9,
       "recommended": true,
-      "priority": 4,
-      "publication_type": "standalone",
-      "content_type": "news",
-      "reason": "La leche, la crema y cómo afectan la duración y potencia de los tés cambiarán por completo el meta de farmeo y PvP en Rust."
+      "priority": 3,
+      "publication_type": "related",
+      "content_type": "curiosity",
+      "reason": "La leche y la crema cambian el meta de los tés en Rust, permitiendo potenciar su duración y efectos, algo crucial para el PvP y farmeo avanzado."
     },
     {
       "title": "livestock fencing",
       "importance": 5,
-      "interaction_potential": 5,
+      "interaction_potential": 4,
+      "social_value": 4,
       "recommended": false,
       "priority": 15,
       "publication_type": "skip",
-      "content_type": "fact",
-      "reason": "Nuevas puertas y cercas para animales. Es un detalle menor que forma parte de la actualización general de livestock."
+      "content_type": "news",
+      "reason": "Es un detalle menor de construcción que acompaña la actualización de granjas sin ameritar una publicación propia."
     },
     {
       "title": "Biofuel Generator",
-      "importance": 9,
-      "interaction_potential": 9,
+      "importance": 8,
+      "interaction_potential": 8,
+      "social_value": 8,
       "recommended": true,
-      "priority": 3,
+      "priority": 4,
       "publication_type": "standalone",
       "content_type": "news",
-      "reason": "¡Por fin podemos reciclar carne podrida en low grade fuel! Un cambio increíble para la supervivencia diaria y bases solitarias."
+      "reason": "Soluciona un problema clásico del juego al dar uso útil a la carne podrida o cruda para generar low grade, algo que los jugadores aprovecharán desde el día uno."
     },
     {
       "title": "Critters and Swimmers",
-      "importance": 6,
-      "interaction_potential": 6,
+      "importance": 4,
+      "interaction_potential": 5,
+      "social_value": 4,
       "recommended": false,
-      "priority": 13,
-      "publication_type": "related",
+      "priority": 16,
+      "publication_type": "skip",
       "content_type": "curiosity",
-      "reason": "Nuevos animales pequeños y ambientales como ranas, cangrejos y tortugas. Da buena atmósfera, pero no afecta directamente el gameplay competitivo."
+      "reason": "Agrega atmósfera al mundo con pequeños animales y tortugas, pero no afecta directamente la jugabilidad competitiva."
     },
     {
       "title": "Air wolf repairable helipad",
       "importance": 9,
       "interaction_potential": 10,
+      "social_value": 9,
       "recommended": true,
-      "priority": 2,
+      "priority": 5,
       "publication_type": "standalone",
       "content_type": "debate",
-      "reason": "¡Cambio gigante al meta de los minis! Reparar el helipad del Bandit Camp requerirá esfuerzo comunitario al inicio del wipe, frenando el avance inmediato de los clanes."
+      "reason": "Modifica radicalmente el inicio de wipe en Bandit Camp al requerir un esfuerzo comunitario para reparar el helipuerto y evitar minicopters excesivamente rápidos."
     },
     {
       "title": "sandbag stacking",
       "importance": 7,
       "interaction_potential": 8,
+      "social_value": 8,
       "recommended": true,
       "priority": 6,
       "publication_type": "standalone",
       "content_type": "news",
-      "reason": "Rework completo a los sandbags con sistema de stacking en 4 etapas hasta crear un pillbox. Interesará mucho a los constructores de bases."
+      "reason": "El renoqueo y estacado de sacos de arena afectará directamente el diseño de bases, la construcción y los métodos de defensa/combate."
     },
     {
       "title": "POWERGRID LOOT ROOMS",
       "importance": 9,
       "interaction_potential": 9,
+      "social_value": 9,
       "recommended": true,
-      "priority": 5,
+      "priority": 7,
       "publication_type": "standalone",
       "content_type": "news",
-      "reason": "Nuevas salas de loot bloqueadas en casi todos los monumentos principales usando Heavy Fuses. ¡Obliga a explorar y armar rutas nuevas!"
+      "reason": "Amplía las mecánicas de los monumentos principales al añadir salas de loot bloqueadas con Heavy Fuses, incentivando la exploración y el PvP en zonas clave."
     },
     {
       "title": "population decay scaling of Heavy fuses",
       "importance": 7,
       "interaction_potential": 6,
+      "social_value": 6,
       "recommended": false,
-      "priority": 14,
+      "priority": 10,
       "publication_type": "related",
-      "content_type": "fact",
-      "reason": "Ajuste de calidad de vida para servidores de bajo$.) pobladas respecto a los fusibles. Es un parche técnico necesario pero de nicho."
+      "content_type": "news",
+      "reason": "Es un ajuste de balance importante para servidores de baja población, pero es un tema de nicho para la mayoría de jugadores de servidores oficiales full."
     },
     {
       "title": "Client Predicted Grenades/Explosives",
       "importance": 9,
       "interaction_potential": 9,
-      "recommended": true,
-      "priority": 7,
-      "publication_type": "standalone",
-      "content_type": "news",
-      "reason": "Predicción de cliente para granadas, C4 y satchels. ¡El raiding se sentirá muchísimo más fluido, especialmente con ping alto!"
-    },
-    {
-      "title": "Machete refresh",
-      "importance": 4,
-      "interaction_potential": 4,
-      "recommended": false,
-      "priority": 16,
-      "publication_type": "skip",
-      "content_type": "fact",
-      "reason": "Rediseño visual del machete. Puramente estético sin impacto real en el juego."
-    },
-    {
-      "title": "Country Selection UI Refresh",
-      "importance": 3,
-      "interaction_potential": 2,
-      "recommended": false,
-      "priority": 17,
-      "publication_type": "skip",
-      "content_type": "fact",
-      "reason": "Cambio menor en la interfaz del buscador de servidores."
-    },
-    {
-      "title": "Performance - Viewmodel memory",
-      "importance": 5,
-      "interaction_potential": 3,
-      "recommended": false,
-      "priority": 18,
-      "publication_type": "skip",
-      "content_type": "fact",
-      "reason": "Optimización interna de memoria en las manos de las armas. Genial para el rendimiento, cero interés para redes sociales."
-    },
-    {
-      "title": "New Workshop Skinnable: All Ladder Hatches",
-      "importance": 4,
-      "interaction_potential": 5,
-      "recommended": false,
-      "priority": 19,
-      "publication_type": "skip",
-      "content_type": "news",
-      "reason": "Nuevos templates de workshop para skins de escotillas de escalera. Contenido para creadores de skins."
-    },
-    {
-      "title": "Plague Doctor Hazmat SUIT Item DLC",
-      "importance": 7,
-      "interaction_potential": 8,
+      "social_value": 9,
       "recommended": true,
       "priority": 8,
       "publication_type": "standalone",
       "content_type": "news",
-      "reason": "Nuevo Hazmat de la Plaga. Los trajes temáticos siempre llaman la atención de la comunidad en la tienda de Steam."
+      "reason": "Mejora masiva en la respuesta del combate. Lanzar granidades, C4 o satchels se sentirá mucho más fluido, algo que toda la comunidad notará al instante."
+    },
+    {
+      "title": "Machete refresh",
+      "importance": 3,
+      "interaction_potential": 3,
+      "social_value": 3,
+      "recommended": false,
+      "priority": 17,
+      "publication_type": "skip",
+      "content_type": "news",
+      "reason": "Cambio estético puro en el modelo y animaciones del machete, sin impacto real en el meta del juego."
+    },
+    {
+      "title": "Country Selection UI Refresh",
+      "importance": 2,
+      "interaction_potential": 2,
+      "social_value": 2,
+      "recommended": false,
+      "priority": 18,
+      "publication_type": "skip",
+      "content_type": "news",
+      "reason": "Ajuste menor en la interfaz del buscador de servidores."
+    },
+    {
+      "title": "Performance - Viewmodel memory",
+      "importance": 4,
+      "interaction_potential": 2,
+      "social_value": 2,
+      "recommended": false,
+      "priority": 19,
+      "publication_type": "skip",
+      "content_type": "news",
+      "reason": "Optimización interna de código y memoria de los modelos de manos que los jugadores no perciben de forma directa."
+    },
+    {
+      "title": "New Workshop Skinnable: All Ladder Hatches",
+      "importance": 3,
+      "interaction_potential": 4,
+      "social_value": 3,
+      "recommended": false,
+      "priority": 20,
+      "publication_type": "skip",
+      "content_type": "news",
+      "reason": "Nuevas opciones para creadores de skins en el workshop, irrelevante para el contenido general de redes."
+    },
+    {
+      "title": "Plague Doctor Hazmat SUIT Item DLC",
+      "importance": 5,
+      "interaction_potential": 6,
+      "social_value": 5,
+      "recommended": false,
+      "priority": 14,
+      "publication_type": "skip",
+      "content_type": "news",
+      "reason": "Anuncio de DLC cosmético tradicional. A menos que el diseño cause furor, no justifica un post dedicado frente a las grandes mecánicas de juego."
     },
     {
       "title": "Performance - Dynamic Store Assets",
       "importance": 4,
       "interaction_potential": 2,
-      "recommended": false,
-      "priority": 20,
-      "publication_type": "skip",
-      "content_type": "fact",
-      "reason": "Mejora técnica en cómo carga la tienda del juego para ahorrar RAM. No afecta la jugabilidad."
-    },
-    {
-      "title": "Performance - Animation IK JObs",
-      "importance": 4,
-      "interaction_potential": 2,
+      "social_value": 2,
       "recommended": false,
       "priority": 21,
       "publication_type": "skip",
-      "content_type": "fact",
-      "reason": "Multihilos para animaciones secundarias. Mejora técnica invisible para el jugador promedio."
+      "content_type": "news",
+      "reason": "Mejora técnica de rendimiento en la tienda del juego, sin impacto en la jugabilidad."
+    },
+    {
+      "title": "Performance - Animation IK JObs",
+      "importance": 5,
+      "interaction_potential": 3,
+      "social_value": 3,
+      "recommended": false,
+      "priority": 22,
+      "publication_type": "skip",
+      "content_type": "news",
+      "reason": "Optimización interna de animaciones secundarias en servidor."
     },
     {
       "title": "Rust Render Pipeline",
-      "importance": 9,
+      "importance": 8,
       "interaction_potential": 8,
+      "social_value": 7,
       "recommended": true,
       "priority": 9,
       "publication_type": "standalone",
       "content_type": "news",
-      "reason": "Migración al nuevo pipeline de renderizado gráfico propio de Rust. Promete mejoras masivas de rendimiento y gráficos a futuro."
+      "reason": "Cambio técnico profundo que moderniza el motor gráfico de Rust y promete mejoras de rendimiento y futuros gráficos, aunque al principio sea opcional."
     },
     {
       "title": "Anticheat: Additional Secure Servers",
       "importance": 8,
       "interaction_potential": 9,
+      "social_value": 8,
       "recommended": true,
-      "priority": 10,
+      "priority": 11,
       "publication_type": "standalone",
-      "content_type": "debate",
-      "reason": "Expansión obligatoria de servidores oficiales con TPM y Secure Boot para combatir chetos. Tema sumamente sensible y debatible en la comunidad."
+      "content_type": "news",
+      "reason": "Medida muy esperada contra los cheaters al expandir los servidores que exigen TPM y Secure Boot."
     },
     {
       "title": "Crash uploading",
       "importance": 5,
       "interaction_potential": 3,
+      "social_value": 3,
       "recommended": false,
-      "priority": 22,
+      "priority": 23,
       "publication_type": "skip",
-      "content_type": "fact",
-      "reason": "Reportes automáticos de cierre inesperado del juego para los desarrolladores."
+      "content_type": "news",
+      "reason": "Mejora en el reporte automático de errores para los desarrolladores."
     },
     {
       "title": "rust isles - Twitch Drops",
       "importance": 6,
       "interaction_potential": 7,
+      "social_value": 6,
       "recommended": false,
-      "priority": 23,
+      "priority": 13,
       "publication_type": "skip",
       "content_type": "news",
-      "reason": "Recordatorio de los Twitch Drops actuales. Es mejor difundirlo en directo o mediante un post rápido de recordatorio general."
+      "reason": "Recordatorio rutinario de eventos y drops que suele manejarse mejor mediante historias o recordatorios rápidos."
     },
     {
       "title": "steam autumn sale",
-      "importance": 6,
-      "interaction_potential": 7,
+      "importance": 5,
+      "interaction_potential": 6,
+      "social_value": 5,
       "recommended": false,
-      "priority": 24,
+      "priority": 12,
       "publication_type": "skip",
       "content_type": "news",
-      "reason": "Descuentos de Steam por las rebajas de otoño. Útil, pero campaña publicitaria estándar de Valve."
+      "reason": "Promoción comercial de ofertas en Steam."
     },
     {
       "title": "Halloween Update",
-      "importance": 9,
-      "interaction_potential": 9,
+      "importance": 8,
+      "interaction_potential": 8,
+      "social_value": 8,
       "recommended": true,
-      "priority": 11,
+      "priority": 10,
       "publication_type": "standalone",
       "content_type": "news",
-      "reason": "¡Anuncio de la fecha del parche de Halloween! El evento favorito de muchos jugadores vuelve con mecánicas terroríficas."
+      "reason": "Anuncio de la fecha del parche obligatorio y el evento temático de Halloween, algo que genera mucha expectativa en la comunidad."
     }
   ]
 }
