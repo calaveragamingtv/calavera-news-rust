@@ -112,13 +112,13 @@
       "publication_type": "standalone",
       "content_type": "news",
       "reason": "La migración al nuevo pipeline de renderizado gráfico propio de Rust es un cambio técnico mayor que promete mejorar el rendimiento general.",
-      "published": false,
-      "published_at": null,
-      "platform": null,
+      "published": true,
+      "published_at": "2026-10-07T22:21:51.651039+00:00",
+      "platform": "x",
       "priority": 4,
-      "post_id": null,
-      "generated_text": null,
-      "generated_at": null
+      "post_id": "6ac6c5fd365feab0d730c17e",
+      "generated_text": "El Rust Render Pipeline ahora usa un nuevo sistema de iluminación volumétrica que cambia por completo cómo se ve el juego de noche. ¿Mejora visual o nos mata el rendimiento en monuments?",
+      "generated_at": "2026-10-07T22:21:51.651060+00:00"
     },
     {
       "article_url": "https://rust.facepunch.com/news/livestock",
