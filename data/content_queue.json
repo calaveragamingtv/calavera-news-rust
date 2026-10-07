@@ -31,36 +31,6 @@
       "social_value": 9,
       "priority": 2,
       "publication_type": "related",
-      "content_type": "fact",
-      "published": false
-    },
-    {
-      "title": "Milk",
-      "author": "Jarryd Campi",
-      "content": "Cows give you access to a new resource - milk. It can be consumed as is, but if you refrigerate it for 4 hours, you will gain a new option to skim the milk. Skimming the milk will give you two items - Skimmed Milk and Cream. Cream is a more powerful consumable. Milk and Cream can also be used in a variety of crafting recipes. Milk will generally increase the duration of tea effects, while Cream can be used to increase the potency of those effects.",
-      "images": [
-        "https://files.facepunch.com/kaantasan/1b3011b1/rust_milk_3_1080_jpg.png"
-      ],
-      "importance": 9,
-      "interaction_potential": 9,
-      "social_value": 9,
-      "priority": 3,
-      "publication_type": "related",
-      "content_type": "curiosity",
-      "published": false
-    },
-    {
-      "title": "Biofuel Generator",
-      "author": "Ian Henderson",
-      "content": "A way to finally make use of raw or spoiled meat. The Biofuel Generator converts organic matter to low grade, but it must be stirred by hand! You can fill it up, stir it and let it process. It will take around 30~ minutes before you'll have to stir again, but don't worry - you can hook up some IO to let you know it needs stirring even when you're in the next room. The amount of low grade you're given depends on the type of organic matter you put in, those with a larger calorific value will give you more low grade.",
-      "images": [
-        "https://files.facepunch.com/kaantasan/1b2911b1/oct2026_Biofuel_Generator_deployable_1_1080.jpg"
-      ],
-      "importance": 8,
-      "interaction_potential": 8,
-      "social_value": 8,
-      "priority": 4,
-      "publication_type": "standalone",
       "content_type": "news",
       "published": false
     },
@@ -73,11 +43,41 @@
         "https://files.facepunch.com/kaantasan/1b2911b1/rust_nov2025update_helicopter_balance_1_1080.jpg"
       ],
       "importance": 9,
-      "interaction_potential": 10,
+      "interaction_potential": 9,
       "social_value": 9,
+      "priority": 3,
+      "publication_type": "standalone",
+      "content_type": "news",
+      "published": false
+    },
+    {
+      "title": "Milk",
+      "author": "Jarryd Campi",
+      "content": "Cows give you access to a new resource - milk. It can be consumed as is, but if you refrigerate it for 4 hours, you will gain a new option to skim the milk. Skimming the milk will give you two items - Skimmed Milk and Cream. Cream is a more powerful consumable. Milk and Cream can also be used in a variety of crafting recipes. Milk will generally increase the duration of tea effects, while Cream can be used to increase the potency of those effects.",
+      "images": [
+        "https://files.facepunch.com/kaantasan/1b3011b1/rust_milk_3_1080_jpg.png"
+      ],
+      "importance": 8,
+      "interaction_potential": 8,
+      "social_value": 8,
+      "priority": 4,
+      "publication_type": "standalone",
+      "content_type": "fact",
+      "published": false
+    },
+    {
+      "title": "Biofuel Generator",
+      "author": "Ian Henderson",
+      "content": "A way to finally make use of raw or spoiled meat. The Biofuel Generator converts organic matter to low grade, but it must be stirred by hand! You can fill it up, stir it and let it process. It will take around 30~ minutes before you'll have to stir again, but don't worry - you can hook up some IO to let you know it needs stirring even when you're in the next room. The amount of low grade you're given depends on the type of organic matter you put in, those with a larger calorific value will give you more low grade.",
+      "images": [
+        "https://files.facepunch.com/kaantasan/1b2911b1/oct2026_Biofuel_Generator_deployable_1_1080.jpg"
+      ],
+      "importance": 8,
+      "interaction_potential": 8,
+      "social_value": 8,
       "priority": 5,
       "publication_type": "standalone",
-      "content_type": "debate",
+      "content_type": "curiosity",
       "published": false
     },
     {
@@ -86,8 +86,8 @@
       "content": "Sandbags have been reworked. They now have four stages, and each stage is upgraded to the next by stacking another sandbag deployable on top. Each stage grows taller, with the final stage being a pillbox version. All Sandbag skins are supported across all variations. The crating cost of the sandbag deployable has been reduced to account for needing to stack more of them. When found in loot, Sandbag Barricades will now be a stack of 4. We've also increased the total stack size to 20.",
       "images": [],
       "importance": 7,
-      "interaction_potential": 8,
-      "social_value": 8,
+      "interaction_potential": 7,
+      "social_value": 7,
       "priority": 6,
       "publication_type": "standalone",
       "content_type": "news",
@@ -100,12 +100,12 @@
       "images": [
         "https://files.facepunch.com/kaantasan/1b3011b1/rust_lootroom_4_1080.jpg"
       ],
-      "importance": 9,
-      "interaction_potential": 9,
-      "social_value": 9,
+      "importance": 8,
+      "interaction_potential": 8,
+      "social_value": 8,
       "priority": 7,
       "publication_type": "standalone",
-      "content_type": "news",
+      "content_type": "curiosity",
       "published": false
     },
     {
@@ -114,8 +114,8 @@
       "content": "Grenades/C4/Satchels in Rust are server-sided. This means when you left-click, your client will tell the server that it has to spawn the grenade or c4, etc and then we have to wait for the server to do so. With higher ping, this can feel like a substantial wait. We are now introducing some client prediction when you use a grenade/c4/satchel. This means that throwing these items will now feel way smoother (especially on higher pings) as your local client will simulate what will happen on the server before the server has to tell us, but don't worry: if there are any discrepancies, your client will be corrected. This shouldn't happen too often, but it will kick in when it needs to.",
       "images": [],
       "importance": 9,
-      "interaction_potential": 9,
-      "social_value": 9,
+      "interaction_potential": 8,
+      "social_value": 8,
       "priority": 8,
       "publication_type": "standalone",
       "content_type": "news",
@@ -128,25 +128,10 @@
       "images": [
         "https://files.facepunch.com/kaantasan/1b3011b1/oct2026_rrp_rust_render_pipeline_1_1080.jpg"
       ],
-      "importance": 8,
-      "interaction_potential": 8,
-      "social_value": 7,
-      "priority": 9,
-      "publication_type": "standalone",
-      "content_type": "news",
-      "published": false
-    },
-    {
-      "title": "Halloween Update",
-      "author": "Rin",
-      "content": "On October 22nd at 18:00BST / 13:00 EST, we'll release a mandatory server and client update to enable some spooky features! Server owners, please remember this date.",
-      "images": [
-        "https://files.facepunch.com/errn/2026/October/coffindecoration_01.jpg"
-      ],
-      "importance": 8,
+      "importance": 9,
       "interaction_potential": 8,
       "social_value": 8,
-      "priority": 10,
+      "priority": 9,
       "publication_type": "standalone",
       "content_type": "news",
       "published": false
@@ -158,12 +143,12 @@
       "images": [
         "https://files.facepunch.com/ryanw/2026/September/29_11-42-QuestionableXenarthra.png"
       ],
-      "importance": 8,
+      "importance": 9,
       "interaction_potential": 9,
       "social_value": 8,
-      "priority": 11,
+      "priority": 10,
       "publication_type": "standalone",
-      "content_type": "news",
+      "content_type": "debate",
       "published": false
     }
   ]

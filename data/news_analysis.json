@@ -13,7 +13,7 @@
       "priority": 1,
       "publication_type": "standalone",
       "content_type": "news",
-      "reason": "La llegada de vacas y ovejas cambia por completo la dinámica del juego pacífico y el roleplay, agregando mecánicas de genética y abono que impactarán a todos los clanes y granjeros."
+      "reason": "La llegada de vacas y ovejas cambia por completo la dinámica del juego, permitiendo la cría, genética y nuevas mecánicas de supervivencia y granjas en Rust."
     },
     {
       "title": "Livestock economy",
@@ -23,30 +23,30 @@
       "recommended": true,
       "priority": 2,
       "publication_type": "related",
-      "content_type": "fact",
-      "reason": "Explica el sistema comercial con los establos y cómo sacarle provecho económico a la crianza de animales y la lana."
+      "content_type": "news",
+      "reason": "Explica cómo sacarle provecho económico a los animales y la lana en los establos, complementando perfectamente el anuncio principal de la ganadería."
     },
     {
       "title": "Milk",
-      "importance": 9,
-      "interaction_potential": 9,
-      "social_value": 9,
+      "importance": 8,
+      "interaction_potential": 8,
+      "social_value": 8,
       "recommended": true,
-      "priority": 3,
-      "publication_type": "related",
-      "content_type": "curiosity",
-      "reason": "La leche y la crema cambian el meta de los tés en Rust, permitiendo potenciar su duración y efectos, algo crucial para el PvP y farmeo avanzado."
+      "priority": 4,
+      "publication_type": "standalone",
+      "content_type": "fact",
+      "reason": "La leche y la crema abren un nuevo meta en el uso de tés, aumentando su duración y potencia, lo cual interesa muchísimo a los clanes y granjeros."
     },
     {
       "title": "livestock fencing",
       "importance": 5,
-      "interaction_potential": 4,
+      "interaction_potential": 5,
       "social_value": 4,
       "recommended": false,
       "priority": 15,
       "publication_type": "skip",
       "content_type": "news",
-      "reason": "Es un detalle menor de construcción que acompaña la actualización de granjas sin ameritar una publicación propia."
+      "reason": "Es un detalle menor de construcción que acompaña a la granja principal sin la fuerza suficiente para un post independiente."
     },
     {
       "title": "Biofuel Generator",
@@ -54,54 +54,54 @@
       "interaction_potential": 8,
       "social_value": 8,
       "recommended": true,
-      "priority": 4,
+      "priority": 5,
       "publication_type": "standalone",
-      "content_type": "news",
-      "reason": "Soluciona un problema clásico del juego al dar uso útil a la carne podrida o cruda para generar low grade, algo que los jugadores aprovecharán desde el día uno."
+      "content_type": "curiosity",
+      "reason": "Resolver qué hacer con la carne podrida y automatizar el bajo grado con generadores mecánicos es algo que todos los jugadores van a querer probar."
     },
     {
       "title": "Critters and Swimmers",
-      "importance": 4,
-      "interaction_potential": 5,
-      "social_value": 4,
+      "importance": 6,
+      "interaction_potential": 6,
+      "social_value": 5,
       "recommended": false,
-      "priority": 16,
+      "priority": 12,
       "publication_type": "skip",
       "content_type": "curiosity",
-      "reason": "Agrega atmósfera al mundo con pequeños animales y tortugas, pero no afecta directamente la jugabilidad competitiva."
+      "reason": "Añaden vida al entorno con tortugas y ranas, pero al ser solo ambiental y decorativo no genera un impacto real en el meta."
     },
     {
       "title": "Air wolf repairable helipad",
       "importance": 9,
-      "interaction_potential": 10,
+      "interaction_potential": 9,
       "social_value": 9,
       "recommended": true,
-      "priority": 5,
+      "priority": 3,
       "publication_type": "standalone",
-      "content_type": "debate",
-      "reason": "Modifica radicalmente el inicio de wipe en Bandit Camp al requerir un esfuerzo comunitario para reparar el helipuerto y evitar minicopters excesivamente rápidos."
+      "content_type": "news",
+      "reason": "Cambia radicalmente el inicio de wipe en los servidores al obligar a reparar el helipad de Bandit Camp comunalmente, frenando el spam de minis."
     },
     {
       "title": "sandbag stacking",
       "importance": 7,
-      "interaction_potential": 8,
-      "social_value": 8,
+      "interaction_potential": 7,
+      "social_value": 7,
       "recommended": true,
       "priority": 6,
       "publication_type": "standalone",
       "content_type": "news",
-      "reason": "El renoqueo y estacado de sacos de arena afectará directamente el diseño de bases, la construcción y los métodos de defensa/combate."
+      "reason": "Modifica el meta de construcción y defensa de bases al permitir apilar sacos de arena en cuatro etapas hasta formar un nido de ametralladoras."
     },
     {
       "title": "POWERGRID LOOT ROOMS",
-      "importance": 9,
-      "interaction_potential": 9,
-      "social_value": 9,
+      "importance": 8,
+      "interaction_potential": 8,
+      "social_value": 8,
       "recommended": true,
       "priority": 7,
       "publication_type": "standalone",
-      "content_type": "news",
-      "reason": "Amplía las mecánicas de los monumentos principales al añadir salas de loot bloqueadas con Heavy Fuses, incentivando la exploración y el PvP en zonas clave."
+      "content_type": "curiosity",
+      "reason": "Incentiva la exploración y el uso de fusibles pesados en una gran cantidad de monumentos que antes no tenían estas salas de loot."
     },
     {
       "title": "population decay scaling of Heavy fuses",
@@ -109,65 +109,65 @@
       "interaction_potential": 6,
       "social_value": 6,
       "recommended": false,
-      "priority": 10,
-      "publication_type": "related",
+      "priority": 11,
+      "publication_type": "skip",
       "content_type": "news",
-      "reason": "Es un ajuste de balance importante para servidores de baja población, pero es un tema de nicho para la mayoría de jugadores de servidores oficiales full."
+      "reason": "Es un ajuste de calidad de vida muy necesario para servidores de baja población, pero de interés limitado para la audiencia general de PvP."
     },
     {
       "title": "Client Predicted Grenades/Explosives",
       "importance": 9,
-      "interaction_potential": 9,
-      "social_value": 9,
+      "interaction_potential": 8,
+      "social_value": 8,
       "recommended": true,
       "priority": 8,
       "publication_type": "standalone",
       "content_type": "news",
-      "reason": "Mejora masiva en la respuesta del combate. Lanzar granidades, C4 o satchels se sentirá mucho más fluido, algo que toda la comunidad notará al instante."
+      "reason": "Mejora crucial para el combate y raideos, reduciendo el molesto retraso al lanzar C4, satchels o granadas con ping alto."
     },
     {
       "title": "Machete refresh",
-      "importance": 3,
-      "interaction_potential": 3,
+      "importance": 4,
+      "interaction_potential": 5,
       "social_value": 3,
-      "recommended": false,
-      "priority": 17,
-      "publication_type": "skip",
-      "content_type": "news",
-      "reason": "Cambio estético puro en el modelo y animaciones del machete, sin impacto real en el meta del juego."
-    },
-    {
-      "title": "Country Selection UI Refresh",
-      "importance": 2,
-      "interaction_potential": 2,
-      "social_value": 2,
       "recommended": false,
       "priority": 18,
       "publication_type": "skip",
       "content_type": "news",
-      "reason": "Ajuste menor en la interfaz del buscador de servidores."
+      "reason": "Una simple actualización visual y de animaciones para un arma que rara vez define el meta actual."
+    },
+    {
+      "title": "Country Selection UI Refresh",
+      "importance": 3,
+      "interaction_potential": 2,
+      "social_value": 2,
+      "recommended": false,
+      "priority": 21,
+      "publication_type": "skip",
+      "content_type": "news",
+      "reason": "Un cambio menor en la interfaz del buscador de servidores que pasa desapercibido para la mayoría."
     },
     {
       "title": "Performance - Viewmodel memory",
-      "importance": 4,
-      "interaction_potential": 2,
-      "social_value": 2,
+      "importance": 5,
+      "interaction_potential": 3,
+      "social_value": 3,
       "recommended": false,
       "priority": 19,
       "publication_type": "skip",
       "content_type": "news",
-      "reason": "Optimización interna de código y memoria de los modelos de manos que los jugadores no perciben de forma directa."
+      "reason": "Optimización técnica interna de memoria RAM que los jugadores no perciben directamente en su experiencia de juego."
     },
     {
       "title": "New Workshop Skinnable: All Ladder Hatches",
-      "importance": 3,
+      "importance": 4,
       "interaction_potential": 4,
       "social_value": 3,
       "recommended": false,
       "priority": 20,
       "publication_type": "skip",
       "content_type": "news",
-      "reason": "Nuevas opciones para creadores de skins en el workshop, irrelevante para el contenido general de redes."
+      "reason": "Nuevas opciones para creadores de skins en el Workshop, irrelevante para el contenido diario de la comunidad."
     },
     {
       "title": "Plague Doctor Hazmat SUIT Item DLC",
@@ -175,10 +175,10 @@
       "interaction_potential": 6,
       "social_value": 5,
       "recommended": false,
-      "priority": 14,
+      "priority": 13,
       "publication_type": "skip",
       "content_type": "news",
-      "reason": "Anuncio de DLC cosmético tradicional. A menos que el diseño cause furor, no justifica un post dedicado frente a las grandes mecánicas de juego."
+      "reason": "Es un nuevo DLC estético de pago; los jugadores están acostumbrados a ellos y rara vez justifican un post dedicado más allá de una mención general."
     },
     {
       "title": "Performance - Dynamic Store Assets",
@@ -186,10 +186,10 @@
       "interaction_potential": 2,
       "social_value": 2,
       "recommended": false,
-      "priority": 21,
+      "priority": 22,
       "publication_type": "skip",
       "content_type": "news",
-      "reason": "Mejora técnica de rendimiento en la tienda del juego, sin impacto en la jugabilidad."
+      "reason": "Cambio técnico en la carga de la tienda del juego para ahorrar RAM, sin impacto en la jugabilidad."
     },
     {
       "title": "Performance - Animation IK JObs",
@@ -197,43 +197,43 @@
       "interaction_potential": 3,
       "social_value": 3,
       "recommended": false,
-      "priority": 22,
+      "priority": 17,
       "publication_type": "skip",
       "content_type": "news",
-      "reason": "Optimización interna de animaciones secundarias en servidor."
+      "reason": "Optimización del motor y animaciones secundarias en segundo plano que los usuarios solo notan como una mejora general de rendimiento."
     },
     {
       "title": "Rust Render Pipeline",
-      "importance": 8,
+      "importance": 9,
       "interaction_potential": 8,
-      "social_value": 7,
+      "social_value": 8,
       "recommended": true,
       "priority": 9,
       "publication_type": "standalone",
       "content_type": "news",
-      "reason": "Cambio técnico profundo que moderniza el motor gráfico de Rust y promete mejoras de rendimiento y futuros gráficos, aunque al principio sea opcional."
+      "reason": "El cambio de motor gráfico tras años de usar el pipeline antiguo promete mejoras masivas de rendimiento y calidad visual a futuro."
     },
     {
       "title": "Anticheat: Additional Secure Servers",
-      "importance": 8,
+      "importance": 9,
       "interaction_potential": 9,
       "social_value": 8,
       "recommended": true,
-      "priority": 11,
+      "priority": 10,
       "publication_type": "standalone",
-      "content_type": "news",
-      "reason": "Medida muy esperada contra los cheaters al expandir los servidores que exigen TPM y Secure Boot."
+      "content_type": "debate",
+      "reason": "La expansión obligatoria de TPM y Secure Boot en más servidores oficiales genera debate sobre la seguridad y los tramposos en el juego."
     },
     {
       "title": "Crash uploading",
-      "importance": 5,
+      "importance": 4,
       "interaction_potential": 3,
-      "social_value": 3,
+      "social_value": 2,
       "recommended": false,
       "priority": 23,
       "publication_type": "skip",
       "content_type": "news",
-      "reason": "Mejora en el reporte automático de errores para los desarrolladores."
+      "reason": "Mejora interna para los desarrolladores al recibir reportes automáticos de errores del juego."
     },
     {
       "title": "rust isles - Twitch Drops",
@@ -241,32 +241,32 @@
       "interaction_potential": 7,
       "social_value": 6,
       "recommended": false,
-      "priority": 13,
+      "priority": 14,
       "publication_type": "skip",
       "content_type": "news",
-      "reason": "Recordatorio rutinario de eventos y drops que suele manejarse mejor mediante historias o recordatorios rápidos."
+      "reason": "Aviso sobre eventos y drops de Twitch que usualmente se comunican de forma fugaz o por historias, no como post principal de contenido."
     },
     {
       "title": "steam autumn sale",
-      "importance": 5,
-      "interaction_potential": 6,
-      "social_value": 5,
+      "importance": 4,
+      "interaction_potential": 5,
+      "social_value": 4,
       "recommended": false,
-      "priority": 12,
+      "priority": 16,
       "publication_type": "skip",
       "content_type": "news",
-      "reason": "Promoción comercial de ofertas en Steam."
+      "reason": "Anuncio publicitario de rebajas en Steam que interesa solo a quienes aún no tienen el juego o algún DLC."
     },
     {
       "title": "Halloween Update",
       "importance": 8,
       "interaction_potential": 8,
-      "social_value": 8,
-      "recommended": true,
-      "priority": 10,
-      "publication_type": "standalone",
+      "social_value": 7,
+      "recommended": false,
+      "priority": 13,
+      "publication_type": "related",
       "content_type": "news",
-      "reason": "Anuncio de la fecha del parche obligatorio y el evento temático de Halloween, algo que genera mucha expectativa en la comunidad."
+      "reason": "Recordatorio de fecha del parche obligatorio para el evento temático, ideal para agrupar con otras noticias estacionales."
     }
   ]
 }
