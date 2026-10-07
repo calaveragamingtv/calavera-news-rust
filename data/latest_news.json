@@ -1,16 +1,2 @@
 {
-  "url": "https://rust.facepunch.com/news/livestock",
-  "title": "Livestock Update - News - Rust",
-  "date": "01 October 2026",
-  "type": "DEVBLOG",
-  "sections": [
-    {
-      "title": "Milk",
-      "importance": 7,
-      "interaction_potential": 8,
-      "recommended": true,
-      "content_type": "news",
-      "reason": "..."
-    }
-  ]
 }
