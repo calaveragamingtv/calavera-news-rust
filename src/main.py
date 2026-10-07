@@ -1,275 +1,119 @@
 import os
-import json
 import re
-import requests
-
+import json
 from datetime import datetime, timezone
 from urllib.parse import urljoin
 
+import requests
 from bs4 import BeautifulSoup
 from google import genai
 
 
-# ============================================================
-# CONFIGURATION
-# ============================================================
-
-BASE_URL = "https://rust.facepunch.com/news/"
-NEWS_BASE_URL = "https://rust.facepunch.com"
+BASE_URL = "https://rust.facepunch.com"
+NEWS_URL = f"{BASE_URL}/news/"
 
 GEMINI_MODEL = "gemini-3.5-flash-lite"
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 BUFFER_API_KEY = os.getenv("BUFFER_API_KEY")
 BUFFER_CHANNEL_ID = os.getenv("BUFFER_CHANNEL_ID")
+DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = "data"
 
-DATA_DIR = os.path.join(ROOT_DIR, "data")
-PROMPT_DIR = os.path.join(ROOT_DIR, "prompt")
+LATEST_NEWS_FILE = os.path.join(DATA_DIR, "latest_news.json")
+NEWS_ANALYSIS_FILE = os.path.join(DATA_DIR, "news_analysis.json")
+CONTENT_QUEUE_FILE = os.path.join(DATA_DIR, "content_queue.json")
 
-LATEST_NEWS_FILE = os.path.join(
-    DATA_DIR,
-    "latest_news.json"
-)
-
-NEWS_ANALYSIS_FILE = os.path.join(
-    DATA_DIR,
-    "news_analysis.json"
-)
-
-QUEUE_FILE = os.path.join(
-    DATA_DIR,
-    "content_queue.json"
-)
-
-ANALYZE_PROMPT_FILE = os.path.join(
-    PROMPT_DIR,
-    "analyze_devblog_sections.txt"
-)
-
-X_POST_PROMPT_FILE = os.path.join(
-    PROMPT_DIR,
-    "generate_x_post.txt"
-)
-
-GENERAL_ANNOUNCEMENT_PROMPT_FILE = os.path.join(
-    PROMPT_DIR,
-    "generate_general_announcement.txt"
-)
-
-MINIMUM_PUBLICATION_SCORE = 75
+ANALYZE_PROMPT_FILE = "prompt/analyze_devblog_sections.txt"
+X_POST_PROMPT_FILE = "prompt/generate_x_post.txt"
+GENERAL_ANNOUNCEMENT_PROMPT_FILE = "prompt/generate_general_announcement.txt"
 
 
 # ============================================================
-# GEMINI
+# UTILIDADES
 # ============================================================
 
-if not GEMINI_API_KEY:
-    raise RuntimeError(
-        "GEMINI_API_KEY no está configurada."
-    )
-
-client = genai.Client(
-    api_key=GEMINI_API_KEY
-)
+def now_iso():
+    return datetime.now(timezone.utc).isoformat()
 
 
-# ============================================================
-# GENERIC HELPERS
-# ============================================================
+def ensure_data_dir():
+    os.makedirs(DATA_DIR, exist_ok=True)
+
 
 def load_json(path, default=None):
     if not os.path.exists(path):
         return default
 
-    try:
-        with open(
-            path,
-            "r",
-            encoding="utf-8"
-        ) as file:
-            return json.load(file)
-
-    except Exception as exc:
-        print(
-            f"ERROR leyendo JSON {path}: {exc}"
-        )
-
-        return default
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 
 def save_json(path, data):
-    os.makedirs(
-        os.path.dirname(path),
-        exist_ok=True
-    )
+    ensure_data_dir()
 
-    with open(
-        path,
-        "w",
-        encoding="utf-8"
-    ) as file:
-
-        json.dump(
-            data,
-            file,
-            ensure_ascii=False,
-            indent=2
-        )
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
 
 def load_prompt(path):
-    if not os.path.exists(path):
-        raise FileNotFoundError(
-            f"No existe el prompt: {path}"
-        )
-
-    with open(
-        path,
-        "r",
-        encoding="utf-8"
-    ) as file:
-        return file.read()
-
-
-def clean_text(text):
-    if not text:
-        return ""
-
-    return re.sub(
-        r"\s+",
-        " ",
-        text
-    ).strip()
+    with open(path, "r", encoding="utf-8") as f:
+        return f.read()
 
 
 def parse_json_response(text):
     """
-    Convierte una respuesta de Gemini en JSON.
-
-    Soporta:
-    - JSON directo
-    - ```json ... ```
-    - JSON embebido dentro de texto
+    Gemini puede devolver JSON directamente o envolverlo
+    en bloques ```json.
     """
 
-    if not text:
-        raise ValueError(
-            "Gemini devolvió una respuesta vacía."
-        )
+    if isinstance(text, dict):
+        return text
 
-    text = text.strip()
+    cleaned = text.strip()
 
-    # --------------------------------------------------------
-    # Remove markdown code fences
-    # --------------------------------------------------------
-
-    if text.startswith("```"):
-
-        text = re.sub(
-            r"^```(?:json)?\s*",
-            "",
-            text,
-            flags=re.IGNORECASE
-        )
-
-        text = re.sub(
-            r"\s*```$",
-            "",
-            text
-        )
-
-        text = text.strip()
-
-    # --------------------------------------------------------
-    # Direct JSON
-    # --------------------------------------------------------
+    if cleaned.startswith("```"):
+        cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned)
+        cleaned = re.sub(r"\s*```$", "", cleaned)
 
     try:
-        return json.loads(text)
-
+        return json.loads(cleaned)
     except json.JSONDecodeError:
-        pass
+        start = cleaned.find("{")
+        end = cleaned.rfind("}")
 
-    # --------------------------------------------------------
-    # Search JSON object
-    # --------------------------------------------------------
+        if start != -1 and end != -1 and end > start:
+            return json.loads(cleaned[start:end + 1])
 
-    object_match = re.search(
-        r"\{.*\}",
-        text,
-        flags=re.DOTALL
-    )
+        raise
 
-    if object_match:
 
-        try:
-            return json.loads(
-                object_match.group(0)
-            )
+def get_gemini_client():
+    if not GEMINI_API_KEY:
+        raise RuntimeError("Falta GEMINI_API_KEY.")
 
-        except json.JSONDecodeError:
-            pass
-
-    # --------------------------------------------------------
-    # Search JSON array
-    # --------------------------------------------------------
-
-    array_match = re.search(
-        r"\[.*\]",
-        text,
-        flags=re.DOTALL
-    )
-
-    if array_match:
-
-        try:
-            return json.loads(
-                array_match.group(0)
-            )
-
-        except json.JSONDecodeError:
-            pass
-
-    raise ValueError(
-        "No se pudo interpretar la respuesta de Gemini como JSON.\n"
-        f"Respuesta:\n{text}"
-    )
+    return genai.Client(api_key=GEMINI_API_KEY)
 
 
 # ============================================================
-# RUST NEWS SCRAPER
+# SCRAPER
 # ============================================================
 
 def get_latest_news():
-
-    print(
-        "Buscando último Rust News..."
-    )
-
     response = requests.get(
-        BASE_URL,
+        NEWS_URL,
         timeout=30,
         headers={
-            "User-Agent": (
-                "Mozilla/5.0 "
-                "(compatible; CalaveraGamingTV Rust News Bot)"
-            )
+            "User-Agent": "Mozilla/5.0"
         }
     )
 
     response.raise_for_status()
 
-    soup = BeautifulSoup(
-        response.text,
-        "html.parser"
-    )
+    soup = BeautifulSoup(response.text, "html.parser")
 
-    for link in soup.select(
-        'a[href*="/news/"]'
-    ):
-
+    for link in soup.select('a[href*="/news/"]'):
         href = link.get("href")
 
         if not href:
@@ -281,235 +125,102 @@ def get_latest_news():
         if not href.startswith("/news/"):
             continue
 
-        url = urljoin(
-            BASE_URL,
-            href
-        )
+        return urljoin(BASE_URL, href)
 
-        return url
-
-    raise RuntimeError(
-        "No se encontró el último artículo de Rust."
-    )
+    raise RuntimeError("No se encontró ninguna noticia en Facepunch.")
 
 
-def extract_article_metadata(
-    soup,
-    html
-):
-
-    # ========================================================
-    # TITLE
-    # ========================================================
-
+def extract_article_metadata(soup):
     title = None
-
-    h1 = soup.find("h1")
-
-    if h1:
-
-        title = clean_text(
-            h1.get_text(
-                " ",
-                strip=True
-            )
-        )
-
-    if not title:
-
-        og_title = soup.find(
-            "meta",
-            property="og:title"
-        )
-
-        if og_title:
-
-            title = clean_text(
-                og_title.get("content")
-            )
-
-    if not title and soup.title:
-
-        title = clean_text(
-            soup.title.get_text()
-        )
-
-        title = re.sub(
-            r"\s*-\s*News\s*-\s*Rust\s*$",
-            "",
-            title,
-            flags=re.IGNORECASE
-        )
-
-    # ========================================================
-    # DATE
-    # ========================================================
-
     date = None
-
-    time_element = soup.find("time")
-
-    if time_element:
-
-        date = (
-            time_element.get("datetime")
-            or time_element.get_text(
-                " ",
-                strip=True
-            )
-        )
-
-    if not date:
-
-        text_content = soup.get_text(
-            " ",
-            strip=True
-        )
-
-        date_patterns = [
-            r"\b\d{1,2}\s+[A-Za-z]+\s+\d{4}\b",
-            r"\b\d{1,2}\s+[A-Za-z]{3}\s+\d{4}\b",
-            r"\b[A-Za-z]+\s+\d{1,2},\s+\d{4}\b"
-        ]
-
-        for pattern in date_patterns:
-
-            match = re.search(
-                pattern,
-                text_content
-            )
-
-            if match:
-
-                date = match.group(0)
-
-                break
-
-    # ========================================================
-    # TYPE
-    # ========================================================
-
     article_type = None
 
-    page_text_upper = soup.get_text(
-        " ",
-        strip=True
-    ).upper()
+    # --------------------------------------------------------
+    # TITLE
+    # --------------------------------------------------------
 
-    if "DEVBLOG" in page_text_upper:
+    og_title = soup.find("meta", property="og:title")
 
+    if og_title and og_title.get("content"):
+        title = og_title["content"].strip()
+
+    if not title and soup.title:
+        title = soup.title.get_text(" ", strip=True)
+
+    if title:
+        title = re.sub(r"\s*-\s*News\s*-\s*Rust\s*$", "", title).strip()
+
+    # --------------------------------------------------------
+    # DATE
+    # --------------------------------------------------------
+
+    date_patterns = [
+        r"\b\d{1,2}\s+[A-Za-z]+\s+\d{4}\b",
+        r"\b\d{1,2}\s+[A-Za-z]{3}\s+\d{4}\b",
+        r"\b[A-Za-z]+\s+\d{1,2},\s+\d{4}\b"
+    ]
+
+    page_text = soup.get_text(" ", strip=True)
+
+    for pattern in date_patterns:
+        match = re.search(pattern, page_text)
+
+        if match:
+            date = match.group(0)
+            break
+
+    # --------------------------------------------------------
+    # TYPE
+    # --------------------------------------------------------
+
+    if soup.select('a[href*="/news/"]'):
         article_type = "DEVBLOG"
 
-    elif "COMMUNITY" in page_text_upper:
-
-        article_type = "COMMUNITY"
-
-    elif "NEWS" in page_text_upper:
-
-        article_type = "NEWS"
-
     return {
-        "title": title or "Unknown",
-        "date": date or "Unknown",
-        "type": article_type or "UNKNOWN"
+        "title": title or "Rust Update",
+        "date": date or "",
+        "type": article_type or "DEVBLOG"
     }
 
 
-def extract_sections(soup):
+def scrape_article(url):
+    response = requests.get(
+        url,
+        timeout=30,
+        headers={
+            "User-Agent": "Mozilla/5.0"
+        }
+    )
+
+    response.raise_for_status()
+
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    metadata = extract_article_metadata(soup)
 
     sections = []
 
-    blocks = soup.select(
-        ".news-section-block"
-    )
+    for block in soup.select(".news-section-block"):
 
-    print(
-        f"Secciones encontradas: {len(blocks)}"
-    )
+        header = block.select_one(".section-header")
 
-    for index, block in enumerate(
-        blocks,
-        start=1
-    ):
+        if not header:
+            continue
 
-        # ====================================================
-        # HEADER
-        # ====================================================
+        title_element = header.select_one(".title")
+        author_element = header.select_one(".author")
 
-        title_element = block.select_one(
-            ".section-header .title"
-        )
-
-        author_element = block.select_one(
-            ".section-header .author"
-        )
-
-        title = clean_text(
-            title_element.get_text(
-                " ",
-                strip=True
-            )
+        title = (
+            title_element.get_text(" ", strip=True)
             if title_element
             else ""
         )
 
-        author = clean_text(
-            author_element.get_text(
-                " ",
-                strip=True
-            )
+        author = (
+            author_element.get_text(" ", strip=True)
             if author_element
             else ""
         )
-
-        # ====================================================
-        # CONTENT
-        # ====================================================
-
-        content_element = block.select_one(
-            ".content"
-        )
-
-        content = ""
-
-        if content_element:
-
-            content = clean_text(
-                content_element.get_text(
-                    " ",
-                    strip=True
-                )
-            )
-
-        # ====================================================
-        # IMAGES
-        # ====================================================
-
-        images = []
-
-        if content_element:
-
-            for image in content_element.select("img"):
-
-                src = image.get("src")
-
-                if not src:
-                    continue
-
-                image_url = urljoin(
-                    BASE_URL,
-                    src
-                )
-
-                if image_url not in images:
-
-                    images.append(
-                        image_url
-                    )
-
-        # ====================================================
-        # SKIP INVALID SECTIONS
-        # ====================================================
 
         if not title:
             continue
@@ -517,373 +228,228 @@ def extract_sections(soup):
         if title == "⠀":
             continue
 
-        if not content:
+        content_element = block.select_one(".content")
+
+        if not content_element:
             continue
 
+        content = content_element.get_text(
+            "\n",
+            strip=True
+        )
+
+        images = []
+
+        for img in content_element.select("img"):
+            src = img.get("src")
+
+            if not src:
+                continue
+
+            image_url = urljoin(url, src)
+
+            if image_url not in images:
+                images.append(image_url)
+
         sections.append({
-            "section_index": index,
             "title": title,
             "author": author,
             "content": content,
             "images": images
         })
 
-    return sections
-
-
-def scrape_latest_article():
-
-    url = get_latest_news()
-
-    print(
-        f"Último artículo: {url}"
-    )
-
-    response = requests.get(
-        url,
-        timeout=30,
-        headers={
-            "User-Agent": (
-                "Mozilla/5.0 "
-                "(compatible; CalaveraGamingTV Rust News Bot)"
-            )
-        }
-    )
-
-    response.raise_for_status()
-
-    html = response.text
-
-    soup = BeautifulSoup(
-        html,
-        "html.parser"
-    )
-
-    metadata = extract_article_metadata(
-        soup,
-        html
-    )
-
-    sections = extract_sections(
-        soup
-    )
-
-    print(
-        f"Título detectado: {metadata['title']}"
-    )
-
-    print(
-        f"Fecha detectada: {metadata['date']}"
-    )
-
-    print(
-        f"Tipo detectado: {metadata['type']}"
-    )
-
-    return {
-        "url": url,
-        "title": metadata["title"],
-        "date": metadata["date"],
-        "type": metadata["type"],
-        "sections": sections
-    }
+    return metadata, sections
 
 
 # ============================================================
-# GEMINI - SECTION ANALYSIS
+# ANALISIS GEMINI
 # ============================================================
 
-def build_sections_for_prompt(
-    sections
-):
+def analyze_sections(article, sections):
+    prompt = load_prompt(ANALYZE_PROMPT_FILE)
 
-    blocks = []
+    serialized_sections = []
 
-    for index, section in enumerate(
-        sections,
-        start=1
-    ):
+    for index, section in enumerate(sections, start=1):
+        serialized_sections.append(
+            f"""
+SECCIÓN {index}
 
-        block = (
-            f"SECCIÓN {index}\n"
-            f"TÍTULO: {section['title']}\n"
-            f"AUTOR: {section['author']}\n"
-            f"CONTENIDO:\n"
-            f"{section['content']}\n"
+Título:
+{section["title"]}
+
+Autor:
+{section["author"]}
+
+Contenido:
+{section["content"]}
+
+Imágenes:
+{json.dumps(section["images"], ensure_ascii=False)}
+""".strip()
         )
 
-        blocks.append(
-            block
-        )
+    full_prompt = prompt
 
-    return "\n\n".join(
-        blocks
+    full_prompt = full_prompt.replace(
+        "{{ARTICLE_TITLE}}",
+        article["title"]
     )
 
-
-def analyze_sections(
-    article
-):
-
-    prompt_template = load_prompt(
-        ANALYZE_PROMPT_FILE
+    full_prompt = full_prompt.replace(
+        "{{ARTICLE_DATE}}",
+        article["date"]
     )
 
-    sections_text = build_sections_for_prompt(
-        article["sections"]
+    full_prompt = full_prompt.replace(
+        "{{ARTICLE_TYPE}}",
+        article["type"]
     )
 
-    prompt = (
-        prompt_template
-        .replace(
-            "{{ARTICLE_TITLE}}",
-            article["title"]
-        )
-        .replace(
-            "{{ARTICLE_DATE}}",
-            article["date"]
-        )
-        .replace(
-            "{{ARTICLE_TYPE}}",
-            article["type"]
-        )
-        .replace(
-            "{{SECTIONS}}",
-            sections_text
-        )
+    full_prompt = full_prompt.replace(
+        "{{SECTIONS}}",
+        "\n\n".join(serialized_sections)
     )
 
-    print(
-        "Analizando secciones con Gemini..."
-    )
+    client = get_gemini_client()
 
     response = client.models.generate_content(
         model=GEMINI_MODEL,
-        contents=prompt
+        contents=full_prompt
     )
 
-    result = parse_json_response(
-        response.text
-    )
+    result = parse_json_response(response.text)
 
-    if not isinstance(
-        result,
-        list
-    ):
-
-        raise ValueError(
-            "El análisis de Gemini no devolvió un array."
+    if not isinstance(result, list):
+        raise RuntimeError(
+            "Gemini no devolvió una lista de análisis."
         )
 
-    analyzed_sections = []
-
-    for original_section, analysis in zip(
-        article["sections"],
-        result
-    ):
-
-        item = {
-            **original_section,
-            **analysis
-        }
-
-        analyzed_sections.append(
-            item
-        )
-
-    return analyzed_sections
+    return result
 
 
 # ============================================================
-# CONTENT QUEUE
+# COLA
 # ============================================================
 
-def create_queue(
-    article,
-    analyzed_sections
-):
+def build_content_queue(article, sections, analysis):
+    analysis_by_title = {
+        item.get("title", "").strip(): item
+        for item in analysis
+        if isinstance(item, dict)
+    }
 
-    selected = []
+    minimum_score = 75
 
-    for section in analyzed_sections:
+    items = []
 
-        publication_type = section.get(
+    for section in sections:
+
+        title = section["title"]
+
+        result = analysis_by_title.get(title)
+
+        if not result:
+            continue
+
+        publication_type = result.get(
             "publication_type",
             "skip"
         )
 
-        score = section.get(
+        score = result.get(
             "publication_score",
             0
         )
 
-        try:
-
-            score = int(
-                score
-            )
-
-        except (
-            TypeError,
-            ValueError
-        ):
-
-            score = 0
-
-        if publication_type == "skip":
+        if publication_type != "standalone":
             continue
 
-        if publication_type == "related":
+        if score < minimum_score:
             continue
-
-        if score < MINIMUM_PUBLICATION_SCORE:
-            continue
-
-        selected.append(
-            section
-        )
-
-    # ========================================================
-    # SORT BY SCORE
-    # ========================================================
-
-    selected.sort(
-        key=lambda item: int(
-            item.get(
-                "publication_score",
-                0
-            )
-        ),
-        reverse=True
-    )
-
-    items = []
-
-    for priority, section in enumerate(
-        selected,
-        start=1
-    ):
 
         items.append({
-
             "article_url": article["url"],
-
             "article_title": article["title"],
-
             "article_date": article["date"],
-
             "article_type": article["type"],
 
-            "title": section.get(
-                "title"
-            ),
+            "title": title,
+            "author": section["author"],
+            "content": section["content"],
+            "images": section["images"],
 
-            "author": section.get(
-                "author",
-                ""
-            ),
-
-            "content": section.get(
-                "content",
-                ""
-            ),
-
-            "images": section.get(
-                "images",
-                []
-            ),
-
-            "importance": section.get(
-                "importance",
-                0
-            ),
-
-            "interaction_potential": section.get(
+            "importance": result.get("importance", 0),
+            "interaction_potential": result.get(
                 "interaction_potential",
                 0
             ),
-
-            "social_value": section.get(
+            "social_value": result.get(
                 "social_value",
                 0
             ),
-
-            "publication_score": section.get(
-                "publication_score",
-                0
-            ),
-
-            "recommended": section.get(
+            "publication_score": score,
+            "recommended": result.get(
                 "recommended",
-                False
+                True
             ),
-
-            "publication_type": section.get(
-                "publication_type",
-                "standalone"
-            ),
-
-            "content_type": section.get(
+            "publication_type": publication_type,
+            "content_type": result.get(
                 "content_type",
                 "news"
             ),
-
-            "reason": section.get(
+            "reason": result.get(
                 "reason",
                 ""
             ),
 
             "published": False,
-
             "published_at": None,
-
             "platform": None,
-
             "post_id": None,
 
             "generated_text": None,
-
             "generated_at": None,
 
-            "priority": priority
+            "priority": 0
         })
 
+    items.sort(
+        key=lambda x: (
+            x["publication_score"],
+            x["importance"],
+            x["interaction_potential"],
+            x["social_value"]
+        ),
+        reverse=True
+    )
+
+    for index, item in enumerate(items, start=1):
+        item["priority"] = index
+
     queue = {
-
-        "article": {
-
-            "url": article["url"],
-
-            "title": article["title"],
-
-            "date": article["date"],
-
-            "type": article["type"]
-        },
+        "article": article,
 
         "general_publication": {
+            "generated": False,
 
-            "discord_posted": False,
-
-            "discord_posted_at": None,
+            "x_text": None,
+            "discord_text": None,
 
             "x_posted": False,
-
             "x_posted_at": None,
+            "x_post_id": None,
 
-            "x_post_id": None
+            "discord_posted": False,
+            "discord_posted_at": None,
+
+            "generated_at": None
         },
 
         "selection": {
-
-            "minimum_publication_score":
-                MINIMUM_PUBLICATION_SCORE,
-
-            "total_sections":
-                len(article["sections"]),
-
-            "selected_sections":
-                len(items)
+            "minimum_publication_score": minimum_score,
+            "total_sections": len(sections),
+            "selected_sections": len(items)
         },
 
         "items": items
@@ -892,380 +458,179 @@ def create_queue(
     return queue
 
 
-def is_same_article(
-    queue,
-    article
-):
-
-    if not queue:
-        return False
-
-    queue_article = queue.get(
-        "article",
-        {}
-    )
-
-    return (
-        queue_article.get("url")
-        == article["url"]
-    )
-
-
 # ============================================================
-# LAST POSTS
+# POSTS ANTERIORES
 # ============================================================
 
-def get_last_posts(
-    queue,
-    limit=5
-):
-
+def get_last_posts(queue):
     posts = []
 
-    if not queue:
-        return posts
+    for item in queue.get("items", []):
+        generated_text = item.get("generated_text")
 
-    items = queue.get(
-        "items",
-        []
-    )
+        if generated_text:
+            posts.append(generated_text)
 
-    published_items = [
-        item
-        for item in items
-        if item.get(
-            "generated_text"
-        )
-    ]
-
-    published_items.sort(
-        key=lambda item:
-            item.get(
-                "generated_at"
-            ) or "",
-        reverse=True
-    )
-
-    for item in published_items[:limit]:
-
-        posts.append(
-            item.get(
-                "generated_text"
-            )
-        )
-
-    return posts
-
-
-def format_last_posts(
-    last_posts
-):
-
-    if not last_posts:
-
-        return (
-            "No hay posts anteriores disponibles."
-        )
-
-    result = []
-
-    for index, post in enumerate(
-        last_posts,
-        start=1
-    ):
-
-        result.append(
-            f"POST {index}:\n{post}"
-        )
-
-    return "\n\n".join(
-        result
-    )
+    return posts[-10:]
 
 
 # ============================================================
-# GENERAL PATCH ANNOUNCEMENT
+# ANUNCIO GENERAL
 # ============================================================
 
-def generate_general_announcement(
-    article,
-    queue
-):
-
-    prompt_template = load_prompt(
+def generate_general_announcement(queue):
+    prompt = load_prompt(
         GENERAL_ANNOUNCEMENT_PROMPT_FILE
     )
 
-    last_posts = get_last_posts(
-        queue
+    article = queue["article"]
+
+    sections = []
+
+    for item in queue.get("items", []):
+        sections.append(
+            f"""
+Título:
+{item["title"]}
+
+Score:
+{item["publication_score"]}
+
+Tipo:
+{item["content_type"]}
+
+Contenido:
+{item["content"]}
+""".strip()
+        )
+
+    prompt = prompt.replace(
+        "{{ARTICLE_TITLE}}",
+        article["title"]
     )
 
-    last_posts_text = format_last_posts(
-        last_posts
+    prompt = prompt.replace(
+        "{{ARTICLE_DATE}}",
+        article["date"]
     )
 
-    sections_for_prompt = []
-
-    for item in queue.get(
-        "items",
-        []
-    ):
-
-        sections_for_prompt.append(
-
-            (
-                f"TÍTULO: {item.get('title', '')}\n"
-                f"IMPORTANCIA: {item.get('importance', 0)}\n"
-                f"INTERACCIÓN: {item.get('interaction_potential', 0)}\n"
-                f"VALOR SOCIAL: {item.get('social_value', 0)}\n"
-                f"PUBLICATION SCORE: {item.get('publication_score', 0)}\n"
-                f"TIPO DE CONTENIDO: {item.get('content_type', '')}\n"
-                f"RAZÓN: {item.get('reason', '')}\n"
-                f"CONTENIDO:\n{item.get('content', '')}"
-            )
-        )
-
-    sections_text = "\n\n".join(
-        sections_for_prompt
+    prompt = prompt.replace(
+        "{{ARTICLE_TYPE}}",
+        article["type"]
     )
 
-    prompt = (
-        prompt_template
-
-        .replace(
-            "{{ARTICLE_TITLE}}",
-            article["title"]
-        )
-
-        .replace(
-            "{{ARTICLE_DATE}}",
-            article["date"]
-        )
-
-        .replace(
-            "{{ARTICLE_TYPE}}",
-            article["type"]
-        )
-
-        .replace(
-            "{{LAST_POSTS}}",
-            last_posts_text
-        )
-
-        .replace(
-            "{{SECTIONS}}",
-            sections_text
-        )
+    prompt = prompt.replace(
+        "{{LAST_POSTS}}",
+        "\n\n".join(get_last_posts(queue))
     )
 
-    print(
-        "\nGenerando anuncio general del patch..."
+    prompt = prompt.replace(
+        "{{SECTIONS}}",
+        "\n\n".join(sections)
     )
+
+    client = get_gemini_client()
 
     response = client.models.generate_content(
         model=GEMINI_MODEL,
         contents=prompt
     )
 
-    result = parse_json_response(
-        response.text
-    )
+    result = parse_json_response(response.text)
 
-    if not isinstance(
-        result,
-        dict
-    ):
-
-        raise ValueError(
-            "El anuncio general no devolvió un objeto JSON."
-        )
-
-    x_text = result.get(
-        "x_text"
-    )
-
-    discord_text = result.get(
-        "discord_text"
-    )
+    x_text = result.get("x_text")
+    discord_text = result.get("discord_text")
 
     if not x_text:
-
-        raise ValueError(
-            "Gemini no devolvió x_text."
+        raise RuntimeError(
+            "El anuncio general no contiene x_text."
         )
 
     if not discord_text:
-
-        raise ValueError(
-            "Gemini no devolvió discord_text."
+        raise RuntimeError(
+            "El anuncio general no contiene discord_text."
         )
 
     return {
-
         "x_text": x_text.strip(),
-
         "discord_text": discord_text.strip()
     }
 
 
 # ============================================================
-# X POST GENERATION
+# GENERAR POST DE SECCIÓN
 # ============================================================
 
-def generate_x_post(
-    item
-):
+def generate_x_post(item, queue):
+    prompt = load_prompt(X_POST_PROMPT_FILE)
 
-    prompt_template = load_prompt(
-        X_POST_PROMPT_FILE
+    prompt = prompt.replace(
+        "{{ARTICLE_TITLE}}",
+        item["article_title"]
     )
 
-    prompt = (
-        prompt_template
-
-        .replace(
-            "{{SECTION_TITLE}}",
-            item.get(
-                "title",
-                ""
-            )
-        )
-
-        .replace(
-            "{{SECTION_CONTENT}}",
-            item.get(
-                "content",
-                ""
-            )
-        )
-
-        .replace(
-            "{{ARTICLE_TITLE}}",
-            item.get(
-                "article_title",
-                ""
-            )
-        )
-
-        .replace(
-            "{{ARTICLE_DATE}}",
-            item.get(
-                "article_date",
-                ""
-            )
-        )
+    prompt = prompt.replace(
+        "{{ARTICLE_DATE}}",
+        item["article_date"]
     )
 
-    print(
-        f"Generando post X para: "
-        f"{item.get('title')}"
+    prompt = prompt.replace(
+        "{{ARTICLE_TYPE}}",
+        item["article_type"]
     )
+
+    prompt = prompt.replace(
+        "{{SECTION_TITLE}}",
+        item["title"]
+    )
+
+    prompt = prompt.replace(
+        "{{SECTION_CONTENT}}",
+        item["content"]
+    )
+
+    prompt = prompt.replace(
+        "{{LAST_POSTS}}",
+        "\n".join(get_last_posts(queue))
+    )
+
+    client = get_gemini_client()
 
     response = client.models.generate_content(
         model=GEMINI_MODEL,
         contents=prompt
     )
 
-    raw_text = response.text.strip()
+    result = parse_json_response(response.text)
 
-    if not raw_text:
-
-        raise ValueError(
-            "Gemini devolvió un post vacío."
+    if isinstance(result, dict):
+        text = (
+            result.get("text")
+            or result.get("x_text")
         )
-
-    # ========================================================
-    # GEMINI MAY RETURN JSON
-    # ========================================================
-
-    text = raw_text
-
-    try:
-
-        parsed = parse_json_response(
-            raw_text
-        )
-
-        if isinstance(
-            parsed,
-            dict
-        ):
-
-            if parsed.get("text"):
-
-                text = str(
-                    parsed["text"]
-                ).strip()
-
-            elif parsed.get("x_text"):
-
-                text = str(
-                    parsed["x_text"]
-                ).strip()
-
-    except Exception:
-
-        # Si no es JSON, asumimos que Gemini devolvió
-        # directamente el texto del post.
-        text = raw_text
-
-    # ========================================================
-    # REMOVE MARKDOWN CODE FENCES
-    # ========================================================
-
-    text = re.sub(
-        r"^```(?:text)?\s*",
-        "",
-        text,
-        flags=re.IGNORECASE
-    )
-
-    text = re.sub(
-        r"\s*```$",
-        "",
-        text
-    )
-
-    text = text.strip()
+    else:
+        text = result
 
     if not text:
-
-        raise ValueError(
-            "El texto generado por Gemini quedó vacío."
+        raise RuntimeError(
+            "Gemini no devolvió el texto del post."
         )
 
-    return text
+    return str(text).strip()
 
 
 # ============================================================
 # BUFFER
 # ============================================================
 
-def send_to_buffer(
-    message,
-    images=None
-):
-
+def buffer_create_post(text, image_url=None):
     if not BUFFER_API_KEY:
-
-        raise RuntimeError(
-            "BUFFER_API_KEY no está configurada."
-        )
+        raise RuntimeError("Falta BUFFER_API_KEY.")
 
     if not BUFFER_CHANNEL_ID:
+        raise RuntimeError("Falta BUFFER_CHANNEL_ID.")
 
-        raise RuntimeError(
-            "BUFFER_CHANNEL_ID no está configurada."
-        )
-
-    # ========================================================
-    # BUFFER GRAPHQL
-    #
-    # createPost devuelve PostActionPayload.
-    # La respuesta exitosa contiene un objeto "post".
-    # ========================================================
-
-    query = """
+    mutation = """
     mutation CreatePost($input: CreatePostInput!) {
       createPost(input: $input) {
         ... on PostActionSuccess {
@@ -1278,6 +643,7 @@ def send_to_buffer(
             }
           }
         }
+
         ... on MutationError {
           message
         }
@@ -1286,85 +652,33 @@ def send_to_buffer(
     """
 
     input_data = {
-
-        "text": message,
-
         "channelId": BUFFER_CHANNEL_ID,
-
-        "schedulingType": "automatic",
-
-        "mode": "shareNow"
+        "text": text
     }
 
-    # ========================================================
-    # IMAGES
-    # ========================================================
-
-    valid_images = []
-
-    if images:
-
-        for image_url in images:
-
-            if not image_url:
-                continue
-
-            if (
-                not image_url.startswith(
-                    "http://"
-                )
-                and
-                not image_url.startswith(
-                    "https://"
-                )
-            ):
-
-                continue
-
-            valid_images.append(
-                image_url
-            )
-
-    if valid_images:
-
+    if image_url:
         input_data["assets"] = [
-
             {
                 "image": {
-                    "url": valid_images[0]
+                    "url": image_url
                 }
             }
-
         ]
-
-    # ========================================================
-    # REQUEST
-    # ========================================================
-
-    headers = {
-
-        "Authorization":
-            f"Bearer {BUFFER_API_KEY}",
-
-        "Content-Type":
-            "application/json"
-    }
+    else:
+        input_data["assets"] = []
 
     response = requests.post(
-
         "https://api.buffer.com",
-
-        headers=headers,
-
+        headers={
+            "Authorization": f"Bearer {BUFFER_API_KEY}",
+            "Content-Type": "application/json"
+        },
         json={
-
-            "query": query,
-
+            "query": mutation,
             "variables": {
                 "input": input_data
             }
         },
-
         timeout=30
     )
 
@@ -1372,68 +686,35 @@ def send_to_buffer(
 
     result = response.json()
 
-    # ========================================================
-    # GRAPHQL ERRORS
-    # ========================================================
-
     if result.get("errors"):
-
         raise RuntimeError(
-            "Buffer API error: "
-            + json.dumps(
-                result["errors"],
-                ensure_ascii=False
-            )
+            f"Buffer GraphQL error: {json.dumps(result['errors'], ensure_ascii=False)}"
         )
 
-    # ========================================================
-    # CREATE POST
-    # ========================================================
-
-    create_post = result.get(
-        "data",
-        {}
-    ).get(
-        "createPost"
+    create_post = (
+        result
+        .get("data", {})
+        .get("createPost")
     )
 
     if not create_post:
-
         raise RuntimeError(
             "Buffer no devolvió createPost."
         )
 
-    # ========================================================
-    # BUFFER BUSINESS ERROR
-    # ========================================================
-
-    if create_post.get(
-        "message"
-    ):
-
+    if create_post.get("message"):
         raise RuntimeError(
-            "Buffer rechazó el post: "
-            f"{create_post.get('message')}"
+            f"Buffer rechazó el post: {create_post.get('message')}"
         )
 
-    # ========================================================
-    # SUCCESS POST
-    # ========================================================
-
-    post = create_post.get(
-        "post"
-    )
+    post = create_post.get("post")
 
     if not post:
-
         raise RuntimeError(
             "Buffer no devolvió el objeto post."
         )
 
-    if not post.get(
-        "id"
-    ):
-
+    if not post.get("id"):
         raise RuntimeError(
             "Buffer no devolvió un post ID."
         )
@@ -1442,299 +723,249 @@ def send_to_buffer(
 
 
 # ============================================================
-# DAILY CONTENT PUBLICATION
+# DISCORD
 # ============================================================
 
-def get_next_unpublished_item(
-    queue
-):
-
-    items = queue.get(
-        "items",
-        []
-    )
-
-    unpublished = [
-
-        item
-
-        for item in items
-
-        if not item.get(
-            "published",
-            False
-        )
-    ]
-
-    if not unpublished:
-
-        return None
-
-    unpublished.sort(
-
-        key=lambda item:
-            item.get(
-                "priority",
-                999999
-            )
-    )
-
-    return unpublished[0]
-
-
-def publish_next_content(
-    queue
-):
-
-    item = get_next_unpublished_item(
-        queue
-    )
-
-    if not item:
-
-        print(
-            "No quedan secciones pendientes para publicar."
+def publish_discord(text):
+    if not DISCORD_WEBHOOK_URL:
+        raise RuntimeError(
+            "Falta DISCORD_WEBHOOK_URL."
         )
 
-        return False
-
-    print(
-        "\n----------------------------------------"
+    response = requests.post(
+        DISCORD_WEBHOOK_URL,
+        json={
+            "content": text
+        },
+        timeout=30
     )
 
-    print(
-        "Próximo contenido:"
-    )
-
-    print(
-        f"Título: {item.get('title')}"
-    )
-
-    print(
-        f"Score: {item.get('publication_score')}"
-    )
-
-    print(
-        f"Prioridad: {item.get('priority')}"
-    )
-
-    # ========================================================
-    # GENERATE
-    # ========================================================
-
-    generated_text = generate_x_post(
-        item
-    )
-
-    print(
-        "\nPost generado:"
-    )
-
-    print(
-        generated_text
-    )
-
-    # ========================================================
-    # IMAGE
-    # ========================================================
-
-    images = item.get(
-        "images",
-        []
-    )
-
-    if images:
-
-        print(
-            f"Imagen encontrada: {images[0]}"
+    if response.status_code >= 300:
+        raise RuntimeError(
+            f"Discord rechazó el mensaje "
+            f"({response.status_code}): {response.text}"
         )
-
-    else:
-
-        print(
-            "No hay imagen para este contenido."
-        )
-
-    # ========================================================
-    # BUFFER
-    # ========================================================
-
-    print(
-        "\nPublicando mediante Buffer..."
-    )
-
-    post = send_to_buffer(
-
-        generated_text,
-
-        images=images
-    )
-
-    post_id = post.get(
-        "id"
-    )
-
-    print(
-        f"Publicado correctamente en Buffer. "
-        f"ID: {post_id}"
-    )
-
-    # ========================================================
-    # SAVE STATE ONLY AFTER SUCCESS
-    # ========================================================
-
-    now = datetime.now(
-        timezone.utc
-    ).isoformat()
-
-    item["generated_text"] = (
-        generated_text
-    )
-
-    item["generated_at"] = now
-
-    item["published"] = True
-
-    item["published_at"] = now
-
-    item["platform"] = "x"
-
-    item["post_id"] = post_id
-
-    save_json(
-        QUEUE_FILE,
-        queue
-    )
-
-    print(
-        "Estado guardado correctamente."
-    )
-
-    print(
-        "----------------------------------------"
-    )
 
     return True
 
 
 # ============================================================
-# GENERAL ANNOUNCEMENT PREVIEW
+# ANUNCIO GENERAL
 # ============================================================
 
-def preview_general_announcement(
-    article,
-    queue
-):
+def process_general_announcement(queue):
+    publication = queue["general_publication"]
 
-    """
-    Genera X + Discord pero NO publica.
+    # --------------------------------------------------------
+    # GENERAR UNA SOLA VEZ
+    # --------------------------------------------------------
 
-    Se mantiene así hasta validar que el prompt
-    produce exactamente el resultado esperado.
-    """
+    if not publication.get("generated"):
+        print("Generando anuncio general...")
 
-    publication = queue.get(
-        "general_publication"
-    )
+        generated = generate_general_announcement(queue)
 
-    if not publication:
+        publication["x_text"] = generated["x_text"]
+        publication["discord_text"] = generated["discord_text"]
+        publication["generated"] = True
+        publication["generated_at"] = now_iso()
 
-        publication = {
-
-            "discord_posted":
-                False,
-
-            "discord_posted_at":
-                None,
-
-            "x_posted":
-                False,
-
-            "x_posted_at":
-                None,
-
-            "x_post_id":
-                None
-        }
-
-        queue["general_publication"] = (
-            publication
+        save_json(
+            CONTENT_QUEUE_FILE,
+            queue
         )
 
-    # ========================================================
-    # ALREADY PROCESSED
-    # ========================================================
+        print("")
+        print("========================================")
+        print("ANUNCIO GENERAL - X")
+        print("========================================")
+        print(publication["x_text"])
 
-    if (
-        publication.get(
-            "x_posted"
+        print("")
+        print("========================================")
+        print("ANUNCIO GENERAL - DISCORD")
+        print("========================================")
+        print(publication["discord_text"])
+        print("")
+
+    # --------------------------------------------------------
+    # X
+    # --------------------------------------------------------
+
+    if not publication.get("x_posted"):
+        print("Publicando anuncio general en X mediante Buffer...")
+
+        post = buffer_create_post(
+            publication["x_text"]
         )
-        or
-        publication.get(
-            "discord_posted"
+
+        publication["x_posted"] = True
+        publication["x_posted_at"] = now_iso()
+        publication["x_post_id"] = post["id"]
+
+        save_json(
+            CONTENT_QUEUE_FILE,
+            queue
         )
-    ):
 
         print(
-            "\nEl anuncio general ya tiene actividad registrada."
+            f"Anuncio general publicado en X. "
+            f"ID: {post['id']}"
         )
 
+    else:
+        print("Anuncio general de X ya publicado.")
+
+    # --------------------------------------------------------
+    # DISCORD
+    # --------------------------------------------------------
+
+    if not publication.get("discord_posted"):
+        print("Publicando anuncio general en Discord...")
+
+        publish_discord(
+            publication["discord_text"]
+        )
+
+        publication["discord_posted"] = True
+        publication["discord_posted_at"] = now_iso()
+
+        save_json(
+            CONTENT_QUEUE_FILE,
+            queue
+        )
+
+        print("Anuncio general publicado en Discord.")
+
+    else:
+        print("Anuncio general de Discord ya publicado.")
+
+    # --------------------------------------------------------
+    # RESULTADO
+    # --------------------------------------------------------
+
+    return (
+        publication.get("x_posted")
+        and publication.get("discord_posted")
+    )
+
+
+# ============================================================
+# SIGUIENTE CONTENIDO
+# ============================================================
+
+def get_next_content(queue):
+    unpublished = [
+        item
+        for item in queue.get("items", [])
+        if not item.get("published")
+    ]
+
+    if not unpublished:
         return None
 
-    # ========================================================
-    # GENERATE
-    # ========================================================
+    unpublished.sort(
+        key=lambda x: x.get("priority", 999999)
+    )
 
-    announcement = generate_general_announcement(
-        article,
+    return unpublished[0]
+
+
+def publish_next_content(queue):
+    item = get_next_content(queue)
+
+    if not item:
+        print("No quedan contenidos pendientes.")
+        return False
+
+    print("")
+    print("Próximo contenido:")
+    print(f"Título: {item['title']}")
+    print(f"Score: {item['publication_score']}")
+    print(f"Prioridad: {item['priority']}")
+    print("")
+
+    print(
+        f"Generando post X para: {item['title']}"
+    )
+
+    text = generate_x_post(
+        item,
         queue
     )
 
-    # ========================================================
-    # PREVIEW X
-    # ========================================================
+    print("")
+    print("Post generado:")
+    print(text)
+    print("")
 
-    print(
-        "\n========================================"
+    valid_images = [
+        image
+        for image in item.get("images", [])
+        if isinstance(image, str)
+        and image.startswith("http")
+    ]
+
+    image_url = (
+        valid_images[0]
+        if valid_images
+        else None
+    )
+
+    if image_url:
+        print(f"Imagen encontrada: {image_url}")
+    else:
+        print("No se encontró una imagen válida.")
+
+    print("")
+    print("Publicando mediante Buffer...")
+
+    post = buffer_create_post(
+        text,
+        image_url=image_url
     )
 
     print(
-        "ANUNCIO GENERAL - X"
+        f"Publicado correctamente en Buffer. "
+        f"ID: {post['id']}"
     )
 
-    print(
-        "========================================"
+    # --------------------------------------------------------
+    # IMPORTANTE:
+    # SOLO MARCAMOS COMO PUBLICADO DESPUÉS DE BUFFER
+    # --------------------------------------------------------
+
+    item["published"] = True
+    item["published_at"] = now_iso()
+    item["platform"] = "x"
+    item["post_id"] = post["id"]
+    item["generated_text"] = text
+    item["generated_at"] = now_iso()
+
+    save_json(
+        CONTENT_QUEUE_FILE,
+        queue
     )
 
-    print(
-        announcement["x_text"]
+    print("Estado guardado correctamente.")
+
+    return True
+
+
+# ============================================================
+# NUEVO ARTÍCULO
+# ============================================================
+
+def is_new_article(article, queue):
+    if not queue:
+        return True
+
+    current_article = queue.get("article", {})
+
+    return (
+        current_article.get("url")
+        != article.get("url")
     )
-
-    # ========================================================
-    # PREVIEW DISCORD
-    # ========================================================
-
-    print(
-        "\n========================================"
-    )
-
-    print(
-        "ANUNCIO GENERAL - DISCORD"
-    )
-
-    print(
-        "========================================"
-    )
-
-    print(
-        announcement["discord_text"]
-    )
-
-    print(
-        "\n========================================"
-    )
-
-    return announcement
 
 
 # ============================================================
@@ -1742,217 +973,201 @@ def preview_general_announcement(
 # ============================================================
 
 def main():
+    ensure_data_dir()
 
-    print(
-        "========================================"
+    print("========================================")
+    print("CALAVERA RUST NEWS")
+    print("========================================")
+    print("")
+
+    # --------------------------------------------------------
+    # 1. SCRAPING
+    # --------------------------------------------------------
+
+    print("Buscando última noticia de Rust...")
+
+    latest_url = get_latest_news()
+
+    print(f"Última noticia: {latest_url}")
+    print("")
+
+    article_metadata, sections = scrape_article(
+        latest_url
     )
 
-    print(
-        "CALAVERA GAMING TV - RUST NEWS"
-    )
+    article = {
+        "url": latest_url,
+        "title": article_metadata["title"],
+        "date": article_metadata["date"],
+        "type": article_metadata["type"]
+    }
 
-    print(
-        "========================================"
-    )
+    print(f"Título detectado: {article['title']}")
+    print(f"Fecha detectada: {article['date']}")
+    print(f"Tipo detectado: {article['type']}")
+    print(f"Secciones encontradas: {len(sections)}")
+    print("")
 
-    # ========================================================
-    # 1. SCRAPE
-    # ========================================================
-
-    article = scrape_latest_article()
-
-    # ========================================================
-    # 2. SAVE LATEST NEWS
-    # ========================================================
+    # --------------------------------------------------------
+    # 2. GUARDAR ÚLTIMA NOTICIA
+    # --------------------------------------------------------
 
     save_json(
-
         LATEST_NEWS_FILE,
-
-        {
-
-            "url":
-                article["url"],
-
-            "title":
-                article["title"],
-
-            "date":
-                article["date"],
-
-            "type":
-                article["type"]
-        }
+        article
     )
 
-    # ========================================================
-    # 3. LOAD QUEUE
-    # ========================================================
+    # --------------------------------------------------------
+    # 3. CARGAR COLA
+    # --------------------------------------------------------
 
-    existing_queue = load_json(
-        QUEUE_FILE,
+    queue = load_json(
+        CONTENT_QUEUE_FILE,
         None
     )
 
-    # ========================================================
-    # 4. NEW ARTICLE?
-    # ========================================================
+    new_article = is_new_article(
+        article,
+        queue
+    )
 
-    if not is_same_article(
-        existing_queue,
-        article
-    ):
+    # --------------------------------------------------------
+    # 4. NUEVO PATCH
+    # --------------------------------------------------------
 
-        print(
-            "\nDetectado nuevo artículo."
-        )
+    if new_article:
 
-        # ----------------------------------------------------
-        # ANALYZE
-        # ----------------------------------------------------
+        print("========================================")
+        print("NUEVO PATCH DETECTADO")
+        print("========================================")
+        print("")
 
-        analyzed_sections = analyze_sections(
-            article
-        )
+        print("Analizando secciones con Gemini...")
 
-        save_json(
-
-            NEWS_ANALYSIS_FILE,
-
-            {
-
-                "article": {
-
-                    "url":
-                        article["url"],
-
-                    "title":
-                        article["title"],
-
-                    "date":
-                        article["date"],
-
-                    "type":
-                        article["type"]
-                },
-
-                "sections":
-                    analyzed_sections
-            }
-        )
-
-        # ----------------------------------------------------
-        # CREATE QUEUE
-        # ----------------------------------------------------
-
-        queue = create_queue(
-
+        analysis = analyze_sections(
             article,
-
-            analyzed_sections
+            sections
         )
 
         save_json(
-            QUEUE_FILE,
+            NEWS_ANALYSIS_FILE,
+            analysis
+        )
+
+        queue = build_content_queue(
+            article,
+            sections,
+            analysis
+        )
+
+        save_json(
+            CONTENT_QUEUE_FILE,
             queue
         )
 
+        print("")
+        print("Cola creada.")
         print(
-            "\nNueva cola creada."
+            f"Secciones seleccionadas: "
+            f"{len(queue['items'])}"
+        )
+        print("")
+
+        # ----------------------------------------------------
+        # DÍA 1:
+        # SOLO ANUNCIO GENERAL
+        # ----------------------------------------------------
+
+        print("Procesando anuncio general...")
+
+        process_general_announcement(
+            queue
         )
 
+        print("")
+        print("========================================")
+        print("DÍA 1 COMPLETADO")
+        print("========================================")
         print(
-            "Secciones totales: "
-            f"{queue['selection']['total_sections']}"
+            "No se publica una sección individual "
+            "en esta ejecución."
         )
 
-        print(
-            "Secciones seleccionadas: "
-            f"{queue['selection']['selected_sections']}"
+        save_json(
+            CONTENT_QUEUE_FILE,
+            queue
         )
 
-    else:
+        return
 
-        queue = existing_queue
+    # --------------------------------------------------------
+    # 5. PATCH YA EXISTENTE
+    # --------------------------------------------------------
 
-        print(
-            "\nNo hay un nuevo artículo."
-        )
+    print("Patch ya procesado.")
+    print("")
 
-    # ========================================================
-    # 5. GENERAL ANNOUNCEMENT
-    # ========================================================
+    # --------------------------------------------------------
+    # 6. ASEGURAR ANUNCIO GENERAL
+    # --------------------------------------------------------
 
-    general_publication = queue.get(
+    publication = queue.get(
         "general_publication",
         {}
     )
 
     if not (
-
-        general_publication.get(
-            "x_posted",
-            False
-        )
-
-        or
-
-        general_publication.get(
-            "discord_posted",
-            False
-        )
+        publication.get("x_posted")
+        and publication.get("discord_posted")
     ):
+        print("El anuncio general todavía no está completo.")
 
-        print(
-            "\nGenerando preview del anuncio general..."
-        )
-
-        preview_general_announcement(
-
-            article,
-
+        process_general_announcement(
             queue
         )
 
-    else:
+        print("")
 
-        print(
-            "\nAnuncio general ya procesado."
-        )
+        # Si el anuncio general se completó en esta ejecución,
+        # no consumimos también la primera sección.
+        if (
+            queue["general_publication"].get("x_posted")
+            and queue["general_publication"].get("discord_posted")
+        ):
+            print("Anuncio general completado.")
+            print(
+                "La primera sección queda para la próxima ejecución."
+            )
 
-    # ========================================================
-    # 6. DAILY SECTION CONTENT
-    # ========================================================
+            save_json(
+                CONTENT_QUEUE_FILE,
+                queue
+            )
+
+            return
+
+    # --------------------------------------------------------
+    # 7. UNA SECCIÓN POR EJECUCIÓN
+    # --------------------------------------------------------
 
     publish_next_content(
         queue
     )
 
-    # ========================================================
-    # 7. FINAL SAVE
-    # ========================================================
+    # --------------------------------------------------------
+    # 8. GUARDAR
+    # --------------------------------------------------------
 
     save_json(
-        QUEUE_FILE,
+        CONTENT_QUEUE_FILE,
         queue
     )
 
-    print(
-        "\n========================================"
-    )
+    print("")
+    print("========================================")
+    print("EJECUCIÓN COMPLETADA")
+    print("========================================")
 
-    print(
-        "FIN"
-    )
-
-    print(
-        "========================================"
-    )
-
-
-# ============================================================
-# ENTRY POINT
-# ============================================================
 
 if __name__ == "__main__":
     main()
