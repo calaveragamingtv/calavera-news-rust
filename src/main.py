@@ -33,8 +33,6 @@ def get_latest_news():
 
     soup = BeautifulSoup(html, "html.parser")
 
-    # Facepunch muestra las noticias dentro de los bloques
-    # de noticias de la página principal.
     news_links = soup.select("a[href*='/news/']")
 
     for link in news_links:
@@ -52,44 +50,56 @@ def get_latest_news():
         if not href.startswith("/news/"):
             continue
 
-        # Evitamos URLs que no sean artículos concretos.
         if href.count("/") < 2:
             continue
 
         return urljoin(BASE_URL, href)
 
-    raise Exception("No se pudo encontrar la última noticia.")
+    raise Exception(
+        "No se pudo encontrar la última noticia."
+    )
 
 
 def parse_news(url):
     html = get_page(url)
 
-    soup = BeautifulSoup(html, "html.parser")
+    soup = BeautifulSoup(
+        html,
+        "html.parser"
+    )
 
     title = ""
 
     title_element = soup.select_one("h1")
 
     if title_element:
-        title = title_element.get_text(" ", strip=True)
+        title = title_element.get_text(
+            " ",
+            strip=True
+        )
 
     date = ""
 
     date_element = soup.select_one("time")
 
     if date_element:
-        date = date_element.get_text(" ", strip=True)
+        date = date_element.get_text(
+            " ",
+            strip=True
+        )
 
     news_type = "DEVBLOG"
 
-    # Buscar el tipo de noticia si existe.
     type_candidates = soup.select(
         ".news-type, .type, .news-header .type"
     )
 
     for element in type_candidates:
 
-        value = element.get_text(" ", strip=True)
+        value = element.get_text(
+            " ",
+            strip=True
+        )
 
         if value:
             news_type = value
@@ -97,14 +107,20 @@ def parse_news(url):
 
     sections = []
 
-    for block in soup.select(".news-section-block"):
+    for block in soup.select(
+        ".news-section-block"
+    ):
 
-        header = block.select_one(".section-header")
+        header = block.select_one(
+            ".section-header"
+        )
 
         if not header:
             continue
 
-        title_element = header.select_one(".title")
+        title_element = header.select_one(
+            ".title"
+        )
 
         if not title_element:
             continue
@@ -114,15 +130,15 @@ def parse_news(url):
             strip=True
         )
 
-        # Facepunch puede tener títulos vacíos o caracteres
-        # especiales utilizados como separadores.
         if not section_title:
             continue
 
         if section_title == "⠀":
             continue
 
-        author_element = header.select_one(".author")
+        author_element = header.select_one(
+            ".author"
+        )
 
         author = ""
 
@@ -132,7 +148,9 @@ def parse_news(url):
                 strip=True
             )
 
-        content_element = block.select_one(".content")
+        content_element = block.select_one(
+            ".content"
+        )
 
         if not content_element:
             continue
@@ -144,7 +162,9 @@ def parse_news(url):
 
         images = []
 
-        for image in content_element.select("img"):
+        for image in content_element.select(
+            "img"
+        ):
 
             src = image.get("src")
 
@@ -173,7 +193,10 @@ def parse_news(url):
 
 def save_news(news):
 
-    os.makedirs("data", exist_ok=True)
+    os.makedirs(
+        "data",
+        exist_ok=True
+    )
 
     with open(
         "data/latest_news.json",
@@ -243,8 +266,9 @@ DATE:
 TYPE:
 {news["type"]}
 
-Your task is to analyze ALL sections and determine which
-ones deserve individual social media content.
+Your task is to analyze ALL sections and determine
+which ones are valuable enough to become social media
+content.
 
 IMPORTANT LANGUAGE RULE:
 
@@ -264,12 +288,12 @@ DO NOT generate final social media text in English.
 
 Do not use robotic or literal translations.
 
-Use natural Latin American Spanish suitable for a Rust
-gaming community.
+Use natural Latin American Spanish suitable for a
+Rust gaming community.
 
-Rust item names, monument names, mechanics, systems and
-official terminology may remain in English when that is
-the official name used by the game.
+Rust item names, monument names, mechanics, systems
+and official terminology may remain in English when
+that is the official name used by the game.
 
 Return ONLY valid JSON.
 
@@ -285,6 +309,7 @@ Return exactly this structure:
       "title": "original section title",
       "importance": 0,
       "interaction_potential": 0,
+      "social_value": 0,
       "recommended": true,
       "priority": 0,
       "publication_type": "standalone",
@@ -306,37 +331,107 @@ Do not translate it.
 
 Integer from 1 to 10.
 
-Measures how important the information is for Rust players.
+Measures how important the information is for
+Rust players and gameplay.
 
 3. interaction_potential
 
 Integer from 1 to 10.
 
-Measures how likely the topic is to generate comments,
-discussion, reactions or interest on social media.
+Measures how likely the topic is to generate:
+- comments
+- discussion
+- reactions
+- debate
+- curiosity
 
-4. recommended
+4. social_value
 
-true only if the section deserves individual social
-media content.
+Integer from 1 to 10.
 
-false for minor, repetitive, purely technical or
-low-interest information.
+This is VERY IMPORTANT.
 
-Do NOT mark everything as recommended.
+It measures whether this section is actually worth
+spending an individual social media post on.
 
-5. priority
+Think like a content creator, not like a game developer.
 
-Every section must receive a unique integer priority.
+Ask:
+
+"Would my Rust audience actually care about seeing
+a post about this?"
+
+Ask:
+
+"Can this information create a strong, interesting
+or useful piece of content?"
+
+Ask:
+
+"Is this worth using one of our limited daily posts?"
+
+A section can be technically important but still have
+low social value.
+
+Examples:
+
+A major new Rust gameplay system:
+high social_value.
+
+A major meta change:
+high social_value.
+
+A controversial gameplay change:
+high social_value.
+
+A useful mechanic players need to know:
+high social_value.
+
+A small cosmetic DLC:
+usually low social_value.
+
+A minor UI adjustment:
+low social_value.
+
+A tiny backend optimization:
+low social_value.
+
+A technical change that players will barely notice:
+low social_value.
+
+Do NOT give a high social_value simply because the
+information sounds technically important.
+
+5. recommended
+
+Set to true only when the section has enough social
+value to justify an individual post.
+
+Recommended generally requires:
+
+social_value >= 7
+
+However, use judgment and compare all sections.
+
+Not every section should be recommended.
+
+6. priority
+
+Every section must receive a unique integer.
 
 1 = highest priority.
 
 Higher numbers = lower priority.
 
-The strongest and most interesting topics must receive
-the lowest priority numbers.
+Priority must consider primarily:
 
-6. publication_type
+1. social_value
+2. interaction_potential
+3. importance
+
+The strongest content must receive the lowest priority.
+
+7. publication_type
 
 Must be exactly one of:
 
@@ -345,16 +440,16 @@ Must be exactly one of:
 "skip"
 
 standalone:
-The section deserves its own independent social media post.
+Worth its own independent post.
 
 related:
-The section is interesting but is strongly related to
-another major section and may work better combined with it.
+Interesting, but better combined with another major
+topic because it is closely related.
 
 skip:
-The section should not generate social media content.
+Not worth social media content.
 
-7. content_type
+8. content_type
 
 Must be exactly one of:
 
@@ -364,47 +459,66 @@ Must be exactly one of:
 "fact"
 "curiosity"
 
-8. reason
+Choose the format that would create the strongest
+future social media content.
+
+9. reason
 
 Short explanation in natural Latin American Spanish.
 
-Explain why the section does or does not deserve content.
+Explain why the section deserves or does not deserve
+content.
 
-Compare all sections against each other.
+IMPORTANT CONTENT STRATEGY:
+
+Do not treat the Devblog as a checklist where every
+section must become a post.
+
+We want QUALITY over QUANTITY.
+
+The goal is to find the best content from the entire
+article.
 
 Prioritize:
 
 - major gameplay changes
 - new mechanics
-- important balance changes
-- major changes to the Rust meta
+- changes to the Rust meta
 - controversial changes
-- useful information for players
+- useful player information
 - surprising mechanics
-- discussion potential
-- topics that can generate strong Rust community reactions
+- changes players will immediately notice
+- topics that invite discussion
+- topics with strong curiosity value
 
-Normally do NOT recommend:
+Normally avoid:
 
-- minor bug fixes
-- small technical optimizations
 - cosmetic-only changes
-- minor UI changes
-- routine backend changes
+- small UI changes
+- minor technical optimizations
+- backend changes
+- small bug fixes
+- routine maintenance
 - repetitive information
-- low-impact details
+
+Be especially careful with DLCs, skins and cosmetic
+items. They should normally have low social value unless
+there is something genuinely notable about them.
 
 Avoid creating multiple independent posts about
 essentially the same topic.
 
 If several sections describe different aspects of one
-major feature, the main feature can be "standalone"
-while secondary details can be "related".
+major feature:
 
-The eventual social media strategy is:
+- the main feature can be standalone
+- secondary details can be related
+- insignificant details can be skipped
+
+The eventual strategy is:
 
 - publish the strongest content first
-- one strong piece of content at a time
+- publish one strong piece at a time
 - avoid repetitive posts
 - use remaining worthwhile sections on subsequent days
 - stop when there is no worthwhile content remaining
@@ -565,6 +679,10 @@ def create_content_queue(
                 "interaction_potential",
                 0
             ),
+            "social_value": analysis.get(
+                "social_value",
+                0
+            ),
             "priority": analysis.get(
                 "priority",
                 999
@@ -578,7 +696,9 @@ def create_content_queue(
         })
 
     queue.sort(
-        key=lambda item: item["priority"]
+        key=lambda item: (
+            item["priority"]
+        )
     )
 
     queue_data = {
