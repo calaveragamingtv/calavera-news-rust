@@ -8,7 +8,7 @@
   "selection": {
     "minimum_publication_score": 75,
     "total_sections": 24,
-    "selected_sections": 9
+    "selected_sections": 6
   },
   "items": [
     {
@@ -23,39 +23,17 @@
         "https://files.facepunch.com/kaantasan/1b3011b1/oct2026_livestock_animals_cows_sheep_2_1080%20%281%29.jpg"
       ],
       "importance": 10,
-      "interaction_potential": 10,
-      "social_value": 10,
-      "publication_score": 98,
-      "recommended": true,
-      "publication_type": "standalone",
-      "content_type": "news",
-      "reason": "Es la adición de contenido más grande del parche. Introduce vacas, ovejas, genética y mecánicas de granja que revolucionan el juego casual y competitivo.",
-      "published": false,
-      "published_at": null,
-      "platform": null,
-      "priority": 1
-    },
-    {
-      "article_url": "https://rust.facepunch.com/news/livestock",
-      "article_title": "Livestock Update - News - Rust",
-      "article_date": "01 October 2026",
-      "article_type": "DEVBLOG",
-      "title": "Client Predicted Grenades/Explosives",
-      "author": "Ian Henderson",
-      "content": "Grenades/C4/Satchels in Rust are server-sided. This means when you left-click, your client will tell the server that it has to spawn the grenade or c4, etc and then we have to wait for the server to do so. With higher ping, this can feel like a substantial wait.\nWe are now introducing some client prediction when you use a grenade/c4/satchel. This means that throwing these items will now feel way smoother (especially on higher pings) as your local client will simulate what will happen on the server before the server has to tell us, but don't worry: if there are any discrepancies, your client will be corrected. This shouldn't happen too often, but it will kick in when it needs to.",
-      "images": [],
-      "importance": 9,
       "interaction_potential": 9,
-      "social_value": 9,
+      "social_value": 10,
       "publication_score": 95,
       "recommended": true,
       "publication_type": "standalone",
       "content_type": "news",
-      "reason": "Mejora directa y muy solicitada para el PvP y el raiding, solucionando la frustración del delay con alto ping al tirar explosivos.",
+      "reason": "La incorporación de vacas y ovejas con sistema de genética y reproducción es la novedad principal y más grande de este parche, perfecta para un post independiente de alto impacto.",
       "published": false,
       "published_at": null,
       "platform": null,
-      "priority": 2
+      "priority": 1
     },
     {
       "article_url": "https://rust.facepunch.com/news/livestock",
@@ -72,39 +50,15 @@
       "importance": 9,
       "interaction_potential": 9,
       "social_value": 9,
-      "publication_score": 92,
+      "publication_score": 90,
       "recommended": true,
       "publication_type": "standalone",
       "content_type": "debate",
-      "reason": "Cambio gigante para el meta de inicio de wipe en Bandit Camp, obligando a un esfuerzo comunitario y afectando directamente a los clanes.",
+      "reason": "Cambia drásticamente el meta al obligar a reparar comunitariamente el helipad de Bandit Camp para comprar vehículos al inicio del wipe.",
       "published": false,
       "published_at": null,
       "platform": null,
-      "priority": 3
-    },
-    {
-      "article_url": "https://rust.facepunch.com/news/livestock",
-      "article_title": "Livestock Update - News - Rust",
-      "article_date": "01 October 2026",
-      "article_type": "DEVBLOG",
-      "title": "Milk",
-      "author": "Jarryd Campi",
-      "content": "Cows give you access to a new resource - milk. It can be consumed as is, but if you refrigerate it for 4 hours, you will gain a new option to skim the milk. Skimming the milk will give you two items - Skimmed Milk and Cream. Cream is a more powerful consumable.\nMilk and Cream can also be used in a variety of crafting recipes. Milk will generally increase the duration of tea effects, while Cream can be used to increase the potency of those effects.",
-      "images": [
-        "https://files.facepunch.com/kaantasan/1b3011b1/rust_milk_3_1080_jpg.png"
-      ],
-      "importance": 8,
-      "interaction_potential": 9,
-      "social_value": 9,
-      "publication_score": 88,
-      "recommended": true,
-      "publication_type": "standalone",
-      "content_type": "curiosity",
-      "reason": "La leche, la crema y su interacción directa con la duración y potencia de los tés generan mucha curiosidad y cambiarán el meta defarmeo.",
-      "published": false,
-      "published_at": null,
-      "platform": null,
-      "priority": 4
+      "priority": 2
     },
     {
       "article_url": "https://rust.facepunch.com/news/livestock",
@@ -120,15 +74,15 @@
       "importance": 8,
       "interaction_potential": 9,
       "social_value": 8,
-      "publication_score": 86,
+      "publication_score": 85,
       "recommended": true,
       "publication_type": "standalone",
-      "content_type": "debate",
-      "reason": "Expansión del uso obligatorio de TPM y Secure Boot en más servidores oficiales, un tema que siempre genera debate intenso sobre seguridad y hardware.",
+      "content_type": "news",
+      "reason": "La expansión obligatoria de TPM y Secure Boot a más servidores oficiales de Facepunch para combatir tramposos genera gran interés y debate.",
       "published": false,
       "published_at": null,
       "platform": null,
-      "priority": 5
+      "priority": 3
     },
     {
       "article_url": "https://rust.facepunch.com/news/livestock",
@@ -144,61 +98,37 @@
       "importance": 8,
       "interaction_potential": 8,
       "social_value": 8,
-      "publication_score": 84,
+      "publication_score": 85,
       "recommended": true,
       "publication_type": "standalone",
       "content_type": "news",
-      "reason": "Expande significativamente el looteo de monumentos usando fusibles pesados, incentivando a los jugadores a explorar y revivir rutas olvidadas.",
+      "reason": "La incorporación de nuevas loot rooms en una enorme cantidad de monumentos requiere Heavy Fuses, lo que modifica las rutas de loot y PvP.",
       "published": false,
       "published_at": null,
       "platform": null,
-      "priority": 6
+      "priority": 4
     },
     {
       "article_url": "https://rust.facepunch.com/news/livestock",
       "article_title": "Livestock Update - News - Rust",
       "article_date": "01 October 2026",
       "article_type": "DEVBLOG",
-      "title": "Rust Render Pipeline",
-      "author": "Aidan Murray",
-      "content": "Because Rust has been around for so long, we were still using Unity’s old Built-in Render Pipeline, which has worked for the most part but has been very limiting in the optimisations we can apply and the effects we can render.\nWe have now migrated to the new Rust Render Pipeline, which is a custom Scriptable Render Pipeline made specifically for Rust by our graphics team. This gives us a lot more control over the rendering of Rust as a whole. This wasn’t easy, as we had to remake almost every effect in the game to work with this new pipeline.\nThe main benefit of this will be performance. At first, you should see slightly better performance in most areas of the game, as the new pipeline comes with less overhead. However, this is just the beginning. Our initial goal was to get this pipeline working in tandem with the original pipeline to ensure everything worked correctly and that we could still switch between them at runtime. Once we have fully transitioned, we will be able to optimise this pipeline further, meaning there will be more performance gains in the near future. We also have plans for improving the quality of graphics in the game where we weren’t previously able to do due to the old pipeline.\nThe Rust Render Pipeline can be toggled via a setting under the experimental tab so players can switch back and forth between pipelines in case there are any issues initially. This setting is only going to be here for the first month in case anyone encounters graphical or performance issues that we missed while testing. Hopefully, after the next patch, we’ll be able to remove this fully and have RRP as the default once we know that no serious issues remain.",
-      "images": [
-        "https://files.facepunch.com/kaantasan/1b3011b1/oct2026_rrp_rust_render_pipeline_1_1080.jpg"
-      ],
+      "title": "Client Predicted Grenades/Explosives",
+      "author": "Ian Henderson",
+      "content": "Grenades/C4/Satchels in Rust are server-sided. This means when you left-click, your client will tell the server that it has to spawn the grenade or c4, etc and then we have to wait for the server to do so. With higher ping, this can feel like a substantial wait.\nWe are now introducing some client prediction when you use a grenade/c4/satchel. This means that throwing these items will now feel way smoother (especially on higher pings) as your local client will simulate what will happen on the server before the server has to tell us, but don't worry: if there are any discrepancies, your client will be corrected. This shouldn't happen too often, but it will kick in when it needs to.",
+      "images": [],
       "importance": 8,
       "interaction_potential": 8,
       "social_value": 8,
-      "publication_score": 82,
+      "publication_score": 85,
       "recommended": true,
       "publication_type": "standalone",
       "content_type": "news",
-      "reason": "Cambio tecnológico enorme que moderniza el motor gráfico del juego tras años, prometiendo mejor rendimiento y futuros gráficos.",
+      "reason": "Mejora crucial de calidad de vida (QoL) para el combate al añadir predicción de cliente en explosivos y granades.",
       "published": false,
       "published_at": null,
       "platform": null,
-      "priority": 7
-    },
-    {
-      "article_url": "https://rust.facepunch.com/news/livestock",
-      "article_title": "Livestock Update - News - Rust",
-      "article_date": "01 October 2026",
-      "article_type": "DEVBLOG",
-      "title": "sandbag stacking",
-      "author": "Adam W",
-      "content": "Sandbags have been reworked. They now have four stages, and each stage is upgraded to the next by stacking another sandbag deployable on top. Each stage grows taller, with the final stage being a pillbox version. All Sandbag skins are supported across all variations.\nThe crating cost of the sandbag deployable has been reduced to account for needing to stack more of them. When found in loot, Sandbag Barricades will now be a stack of 4. We've also increased the total stack size to 20.",
-      "images": [],
-      "importance": 7,
-      "interaction_potential": 8,
-      "social_value": 7,
-      "publication_score": 78,
-      "recommended": true,
-      "publication_type": "standalone",
-      "content_type": "fact",
-      "reason": "Modifica directamente la construcción y el PvP defensivo con las nuevas etapas de los sacos de arena y los cambios en sus crafteos.",
-      "published": false,
-      "published_at": null,
-      "platform": null,
-      "priority": 8
+      "priority": 5
     },
     {
       "article_url": "https://rust.facepunch.com/news/livestock",
@@ -211,18 +141,18 @@
       "images": [
         "https://files.facepunch.com/kaantasan/1b2911b1/oct2026_Biofuel_Generator_deployable_1_1080.jpg"
       ],
-      "importance": 7,
-      "interaction_potential": 7,
-      "social_value": 7,
-      "publication_score": 75,
+      "importance": 8,
+      "interaction_potential": 8,
+      "social_value": 8,
+      "publication_score": 80,
       "recommended": true,
       "publication_type": "standalone",
       "content_type": "news",
-      "reason": "Aporta una nueva solución práctica para la carne podrida y cruda, conectando con circuitos eléctricos (IO), algo muy atractivo para bases activas.",
+      "reason": "Un generador que procesa carne podrida o cruda para dar low grade con alertas de IO es una mecánica de supervivencia muy atractiva y con valor propio.",
       "published": false,
       "published_at": null,
       "platform": null,
-      "priority": 9
+      "priority": 6
     }
   ]
 }
