@@ -85,13 +85,13 @@
       "publication_type": "standalone",
       "content_type": "debate",
       "reason": "Modifica directamente el meta del early game y la progresión de los helicópteros en Bandit Camp, generando debate seguro entre clanes y solonis.",
-      "published": false,
-      "published_at": null,
-      "platform": null,
+      "published": true,
+      "published_at": "2026-10-07T22:01:21.914897+00:00",
+      "platform": "x",
       "priority": 3,
-      "post_id": null,
-      "generated_text": null,
-      "generated_at": null
+      "post_id": "6ac6c12f2977c961bdb8a2de",
+      "generated_text": "Ahora podés reparar el Transport Helicopter en el helipad del outpost. Se acabó eso de dejarlo tirado porque se estaba cayendo a pedazos. ¿Vuelve el meta de andar en helicóptero por todos lados?",
+      "generated_at": "2026-10-07T22:01:21.914897+00:00"
     },
     {
       "article_url": "https://rust.facepunch.com/news/livestock",
