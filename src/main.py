@@ -51,6 +51,8 @@ def parse_news(url):
     result = {
         "url": url,
         "title": None,
+        "date": None,
+        "type": None,
         "sections": []
     }
 
@@ -60,22 +62,56 @@ def parse_news(url):
             strip=True
         )
 
-    print("\n===== ELEMENTOS CON CLASE =====\n")
+    # Información general de la noticia
+    tags = soup.select_one(".tags")
 
-    for element in soup.find_all(class_=True):
-        classes = element.get("class")
-
-        text = element.get_text(
+    if tags:
+        tag_text = tags.get_text(
             " ",
             strip=True
         )
 
-        if text and len(text) < 300:
-            print(
-                f"TAG: {element.name} | "
-                f"CLASS: {' '.join(classes)} | "
-                f"TEXT: {text[:200]}"
+        parts = tag_text.split()
+
+        if parts:
+            result["date"] = " ".join(parts[:3])
+
+        if "DEVBLOG" in tag_text:
+            result["type"] = "DEVBLOG"
+
+    # Secciones reales de Facepunch
+    sections = soup.select(".news-section-block")
+
+    for section in sections:
+
+        title_element = section.select_one(
+            ".section-header .title"
+        )
+
+        author_element = section.select_one(
+            ".section-header .author"
+        )
+
+        if not title_element:
+            continue
+
+        title = title_element.get_text(
+            " ",
+            strip=True
+        )
+
+        author = None
+
+        if author_element:
+            author = author_element.get_text(
+                " ",
+                strip=True
             )
+
+        result["sections"].append({
+            "title": title,
+            "author": author
+        })
 
     return result
 
