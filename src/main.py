@@ -60,18 +60,22 @@ def parse_news(url):
             strip=True
         )
 
-    for heading in soup.find_all(
-        ["h1", "h2", "h3", "h4"]
-    ):
-        text = heading.get_text(
+    print("\n===== ELEMENTOS CON CLASE =====\n")
+
+    for element in soup.find_all(class_=True):
+        classes = element.get("class")
+
+        text = element.get_text(
             " ",
             strip=True
         )
 
-        if text:
-            result["sections"].append({
-                "title": text
-            })
+        if text and len(text) < 300:
+            print(
+                f"TAG: {element.name} | "
+                f"CLASS: {' '.join(classes)} | "
+                f"TEXT: {text[:200]}"
+            )
 
     return result
 
