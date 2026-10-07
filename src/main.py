@@ -186,20 +186,7 @@ def save_news(news):
         )
 
 
-def analyze_section(section):
-
-    api_key = os.environ.get(
-        "GEMINI_API_KEY"
-    )
-
-    if not api_key:
-        raise RuntimeError(
-            "No se encontró GEMINI_API_KEY."
-        )
-
-    client = genai.Client(
-        api_key=api_key
-    )
+def analyze_section(section, client):
 
     prompt = f"""
 You are a Rust game content analyst.
@@ -236,6 +223,8 @@ Rules:
   "news", "question", "debate", "fact", "curiosity"
 - reason must be short.
 - Focus on what is interesting to Rust players.
+- Consider gameplay impact, novelty, controversy, usefulness and
+  potential for player interaction.
 - Do not invent information that is not present in the section.
 """
 
@@ -269,6 +258,114 @@ Rules:
                 raise
 
 
+def analyze_all_sections(news):
+
+    api_key = os.environ.get(
+        "GEMINI_API_KEY"
+    )
+
+    if not api_key:
+        raise RuntimeError(
+            "No se encontró GEMINI_API_KEY."
+        )
+
+    client = genai.Client(
+        api_key=api_key
+    )
+
+    analyses = []
+
+    total = len(news["sections"])
+
+    print(
+        f"\nSe encontraron {total} secciones."
+    )
+
+    for index, section in enumerate(
+        news["sections"],
+        start=1
+    ):
+
+        print(
+            "\n--------------------------------"
+        )
+
+        print(
+            f"Sección {index}/{total}: "
+            f'{section["title"]}'
+        )
+
+        print(
+            "--------------------------------"
+        )
+
+        analysis_text = analyze_section(
+            section,
+            client
+        )
+
+        print(
+            analysis_text
+        )
+
+        try:
+
+            analysis = json.loads(
+                analysis_text
+            )
+
+        except json.JSONDecodeError:
+
+            print(
+                "ADVERTENCIA: Gemini no devolvió "
+                "JSON válido para esta sección."
+            )
+
+            analysis = {
+                "title": section["title"],
+                "importance": 0,
+                "interaction_potential": 0,
+                "recommended": False,
+                "content_type": "news",
+                "reason": "Invalid Gemini response"
+            }
+
+        analyses.append(
+            analysis
+        )
+
+    return analyses
+
+
+def save_analysis(news, analyses):
+
+    os.makedirs(
+        "data",
+        exist_ok=True
+    )
+
+    result = {
+        "url": news["url"],
+        "title": news["title"],
+        "date": news["date"],
+        "type": news["type"],
+        "sections": analyses
+    }
+
+    with open(
+        "data/news_analysis.json",
+        "w",
+        encoding="utf-8"
+    ) as file:
+
+        json.dump(
+            result,
+            file,
+            indent=2,
+            ensure_ascii=False
+        )
+
+
 def main():
 
     print("================================")
@@ -298,32 +395,35 @@ def main():
         "data/latest_news.json"
     )
 
-    if len(news["sections"]) > 2:
+    print(
+        "\nAnalizando todas las secciones..."
+    )
 
-        print(
-            "\nAnalizando sección: "
-            f'{news["sections"][2]["title"]}'
-        )
+    analyses = analyze_all_sections(
+        news
+    )
 
-        analysis = analyze_section(
-            news["sections"][2]
-        )
+    save_analysis(
+        news,
+        analyses
+    )
 
-        print(
-            "\n=============================="
-        )
+    print(
+        "\n================================"
+    )
 
-        print(
-            "      GEMINI ANALYSIS"
-        )
+    print(
+        "      ANALISIS COMPLETADO"
+    )
 
-        print(
-            "=============================="
-        )
+    print(
+        "================================"
+    )
 
-        print(
-            analysis
-        )
+    print(
+        "\nAnálisis guardado en "
+        "data/news_analysis.json"
+    )
 
 
 if __name__ == "__main__":
