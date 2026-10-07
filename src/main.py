@@ -8,6 +8,10 @@ from urllib.parse import urljoin
 from google import genai
 
 
+# ============================================================
+# CONFIGURATION
+# ============================================================
+
 BASE_URL = "https://rust.facepunch.com"
 NEWS_URL = f"{BASE_URL}/news/"
 
@@ -21,15 +25,39 @@ HEADERS = {
 }
 
 GEMINI_MODEL = "gemini-3.5-flash-lite"
+
 MIN_PUBLICATION_SCORE = 75
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PROMPT_DIR = os.path.join(BASE_DIR, "prompt")
-DATA_DIR = os.path.join(BASE_DIR, "data")
+BASE_DIR = os.path.dirname(
+    os.path.dirname(
+        os.path.abspath(__file__)
+    )
+)
 
-LATEST_NEWS_FILE = os.path.join(DATA_DIR, "latest_news.json")
-ANALYSIS_FILE = os.path.join(DATA_DIR, "news_analysis.json")
-QUEUE_FILE = os.path.join(DATA_DIR, "content_queue.json")
+PROMPT_DIR = os.path.join(
+    BASE_DIR,
+    "prompt"
+)
+
+DATA_DIR = os.path.join(
+    BASE_DIR,
+    "data"
+)
+
+LATEST_NEWS_FILE = os.path.join(
+    DATA_DIR,
+    "latest_news.json"
+)
+
+ANALYSIS_FILE = os.path.join(
+    DATA_DIR,
+    "news_analysis.json"
+)
+
+QUEUE_FILE = os.path.join(
+    DATA_DIR,
+    "content_queue.json"
+)
 
 
 # ============================================================
@@ -49,21 +77,36 @@ def get_page(url):
 
 
 # ============================================================
-# FILES
+# JSON / FILES
 # ============================================================
 
 def load_json(path, default=None):
+
     if not os.path.exists(path):
         return default
 
-    with open(path, "r", encoding="utf-8") as file:
+    with open(
+        path,
+        "r",
+        encoding="utf-8"
+    ) as file:
+
         return json.load(file)
 
 
 def save_json(path, data):
-    os.makedirs(os.path.dirname(path), exist_ok=True)
 
-    with open(path, "w", encoding="utf-8") as file:
+    os.makedirs(
+        os.path.dirname(path),
+        exist_ok=True
+    )
+
+    with open(
+        path,
+        "w",
+        encoding="utf-8"
+    ) as file:
+
         json.dump(
             data,
             file,
@@ -73,9 +116,18 @@ def save_json(path, data):
 
 
 def load_prompt(filename):
-    path = os.path.join(PROMPT_DIR, filename)
 
-    with open(path, "r", encoding="utf-8") as file:
+    path = os.path.join(
+        PROMPT_DIR,
+        filename
+    )
+
+    with open(
+        path,
+        "r",
+        encoding="utf-8"
+    ) as file:
+
         return file.read()
 
 
@@ -84,10 +136,18 @@ def load_prompt(filename):
 # ============================================================
 
 def get_latest_news():
-    html = get_page(NEWS_URL)
-    soup = BeautifulSoup(html, "html.parser")
 
-    for link in soup.select('a[href*="/news/"]'):
+    html = get_page(NEWS_URL)
+
+    soup = BeautifulSoup(
+        html,
+        "html.parser"
+    )
+
+    for link in soup.select(
+        'a[href*="/news/"]'
+    ):
+
         href = link.get("href")
 
         if not href:
@@ -99,16 +159,30 @@ def get_latest_news():
         if not href.startswith("/news/"):
             continue
 
-        url = urljoin(BASE_URL, href)
+        url = urljoin(
+            BASE_URL,
+            href
+        )
 
         return url
 
-    raise RuntimeError("No se pudo encontrar el último devblog.")
+    raise RuntimeError(
+        "No se pudo encontrar el último devblog."
+    )
 
+
+# ============================================================
+# PARSE NEWS
+# ============================================================
 
 def parse_news(url):
+
     html = get_page(url)
-    soup = BeautifulSoup(html, "html.parser")
+
+    soup = BeautifulSoup(
+        html,
+        "html.parser"
+    )
 
     # --------------------------------------------------------
     # TITLE
@@ -117,19 +191,33 @@ def parse_news(url):
     title = None
 
     if soup.title:
-        title = soup.title.get_text(strip=True)
+
+        title = soup.title.get_text(
+            strip=True
+        )
 
     if not title:
-        og_title = soup.select_one('meta[property="og:title"]')
+
+        og_title = soup.select_one(
+            'meta[property="og:title"]'
+        )
 
         if og_title:
-            title = og_title.get("content")
+
+            title = og_title.get(
+                "content"
+            )
 
     if not title:
+
         h1 = soup.select_one("h1")
 
         if h1:
-            title = h1.get_text(" ", strip=True)
+
+            title = h1.get_text(
+                " ",
+                strip=True
+            )
 
     # --------------------------------------------------------
     # DATE
@@ -137,30 +225,47 @@ def parse_news(url):
 
     date = None
 
-    time_element = soup.select_one("time")
+    time_element = soup.select_one(
+        "time"
+    )
 
     if time_element:
+
         date = (
             time_element.get("datetime")
-            or time_element.get_text(" ", strip=True)
+            or time_element.get_text(
+                " ",
+                strip=True
+            )
         )
 
     if not date:
+
         for selector in [
             'meta[property="article:published_time"]',
             'meta[name="date"]',
             'meta[name="publish-date"]'
         ]:
-            element = soup.select_one(selector)
+
+            element = soup.select_one(
+                selector
+            )
 
             if element:
-                date = element.get("content")
+
+                date = element.get(
+                    "content"
+                )
 
                 if date:
                     break
 
     if not date:
-        page_text = soup.get_text(" ", strip=True)
+
+        page_text = soup.get_text(
+            " ",
+            strip=True
+        )
 
         date_patterns = [
             r"\b\d{1,2}\s+[A-Za-z]+\s+\d{4}\b",
@@ -169,22 +274,35 @@ def parse_news(url):
         ]
 
         for pattern in date_patterns:
-            match = re.search(pattern, page_text)
+
+            match = re.search(
+                pattern,
+                page_text
+            )
 
             if match:
+
                 date = match.group(0)
+
                 break
 
     if not date:
+
         for pattern in [
             r"\b\d{1,2}\s+[A-Za-z]+\s+\d{4}\b",
             r"\b\d{1,2}\s+[A-Za-z]{3}\s+\d{4}\b",
             r"\b[A-Za-z]+\s+\d{1,2},\s+\d{4}\b"
         ]:
-            match = re.search(pattern, html)
+
+            match = re.search(
+                pattern,
+                html
+            )
 
             if match:
+
                 date = match.group(0)
+
                 break
 
     # --------------------------------------------------------
@@ -194,16 +312,27 @@ def parse_news(url):
     article_type = None
 
     for element in soup.find_all("a"):
-        text = element.get_text(" ", strip=True).upper()
+
+        text = element.get_text(
+            " ",
+            strip=True
+        ).upper()
 
         if text == "DEVBLOG":
+
             article_type = "DEVBLOG"
+
             break
 
     if not article_type:
-        page_text_upper = soup.get_text(" ", strip=True).upper()
+
+        page_text_upper = soup.get_text(
+            " ",
+            strip=True
+        ).upper()
 
         if "DEVBLOG" in page_text_upper:
+
             article_type = "DEVBLOG"
 
     # --------------------------------------------------------
@@ -212,31 +341,53 @@ def parse_news(url):
 
     sections = []
 
-    blocks = soup.select(".news-section-block")
+    blocks = soup.select(
+        ".news-section-block"
+    )
 
     for block in blocks:
 
-        title_element = block.select_one(".section-header .title")
-        author_element = block.select_one(".section-header .author")
-        content_element = block.select_one(".content")
+        title_element = block.select_one(
+            ".section-header .title"
+        )
+
+        author_element = block.select_one(
+            ".section-header .author"
+        )
+
+        content_element = block.select_one(
+            ".content"
+        )
 
         section_title = (
-            title_element.get_text(" ", strip=True)
+            title_element.get_text(
+                " ",
+                strip=True
+            )
             if title_element
             else ""
         )
 
-        if section_title in ("", "⠀"):
+        if section_title in (
+            "",
+            "⠀"
+        ):
             continue
 
         author = (
-            author_element.get_text(" ", strip=True)
+            author_element.get_text(
+                " ",
+                strip=True
+            )
             if author_element
             else ""
         )
 
         content = (
-            content_element.get_text("\n", strip=True)
+            content_element.get_text(
+                "\n",
+                strip=True
+            )
             if content_element
             else ""
         )
@@ -244,12 +395,22 @@ def parse_news(url):
         images = []
 
         if content_element:
-            for image in content_element.select("img"):
-                src = image.get("src")
+
+            for image in content_element.select(
+                "img"
+            ):
+
+                src = image.get(
+                    "src"
+                )
 
                 if src:
+
                     images.append(
-                        urljoin(BASE_URL, src)
+                        urljoin(
+                            BASE_URL,
+                            src
+                        )
                     )
 
         sections.append({
@@ -259,6 +420,11 @@ def parse_news(url):
             "images": images
         })
 
+    # --------------------------------------------------------
+    # DEBUG
+    # --------------------------------------------------------
+
+    print()
     print("DEBUG metadata:")
     print(f"HTML title: {title}")
     print(f"Fecha detectada: {date}")
@@ -282,7 +448,10 @@ def analyze_all_sections(news):
 
     section_blocks = []
 
-    for index, section in enumerate(news["sections"], start=1):
+    for index, section in enumerate(
+        news["sections"],
+        start=1
+    ):
 
         section_blocks.append(
             f"""
@@ -299,9 +468,13 @@ Contenido:
 """.strip()
         )
 
-    sections_text = "\n\n".join(section_blocks)
+    sections_text = "\n\n".join(
+        section_blocks
+    )
 
-    prompt = load_prompt("analyze_devblog_sections.txt")
+    prompt = load_prompt(
+        "analyze_devblog_sections.txt"
+    )
 
     prompt = prompt.replace(
         "{{ARTICLE_TITLE}}",
@@ -323,9 +496,12 @@ Contenido:
         sections_text
     )
 
-    api_key = os.environ.get("GEMINI_API_KEY")
+    api_key = os.environ.get(
+        "GEMINI_API_KEY"
+    )
 
     if not api_key:
+
         raise RuntimeError(
             "No existe GEMINI_API_KEY."
         )
@@ -342,14 +518,19 @@ Contenido:
         }
     )
 
-    return json.loads(response.text)
+    return json.loads(
+        response.text
+    )
 
 
 # ============================================================
-# QUEUE
+# CONTENT QUEUE
 # ============================================================
 
-def create_content_queue(news, analyses):
+def create_content_queue(
+    news,
+    analyses
+):
 
     sections_by_title = {
         section["title"]: section
@@ -370,11 +551,22 @@ def create_content_queue(news, analyses):
             0
         )
 
-        if publication_type in ("skip", "related"):
+        # ----------------------------------------------------
+        # FILTER
+        # ----------------------------------------------------
+
+        if publication_type in (
+            "skip",
+            "related"
+        ):
             continue
 
         if publication_score < MIN_PUBLICATION_SCORE:
             continue
+
+        # ----------------------------------------------------
+        # FIND ORIGINAL SECTION
+        # ----------------------------------------------------
 
         section = sections_by_title.get(
             analysis.get("title")
@@ -383,15 +575,26 @@ def create_content_queue(news, analyses):
         if not section:
             continue
 
+        # ----------------------------------------------------
+        # CREATE ITEM
+        # ----------------------------------------------------
+
         items.append({
+
             "article_url": news["url"],
+
             "article_title": news["title"],
+
             "article_date": news["date"],
+
             "article_type": news["type"],
 
             "title": section["title"],
+
             "author": section["author"],
+
             "content": section["content"],
+
             "images": section["images"],
 
             "importance": analysis.get(
@@ -428,16 +631,30 @@ def create_content_queue(news, analyses):
                 ""
             ),
 
-            # Persistent publication state
+            # ------------------------------------------------
+            # PUBLICATION STATE
+            # ------------------------------------------------
+
             "published": False,
+
             "published_at": None,
+
             "platform": None,
+
             "post_id": None,
 
-            # Generation state
+            # ------------------------------------------------
+            # GENERATION STATE
+            # ------------------------------------------------
+
             "generated_text": None,
+
             "generated_at": None
         })
+
+    # --------------------------------------------------------
+    # SORT
+    # --------------------------------------------------------
 
     items.sort(
         key=lambda item: (
@@ -449,10 +666,23 @@ def create_content_queue(news, analyses):
         reverse=True
     )
 
-    for index, item in enumerate(items, start=1):
+    # --------------------------------------------------------
+    # PRIORITY
+    # --------------------------------------------------------
+
+    for index, item in enumerate(
+        items,
+        start=1
+    ):
+
         item["priority"] = index
 
+    # --------------------------------------------------------
+    # QUEUE
+    # --------------------------------------------------------
+
     queue = {
+
         "article": {
             "url": news["url"],
             "title": news["title"],
@@ -461,18 +691,28 @@ def create_content_queue(news, analyses):
         },
 
         "general_publication": {
+
             "discord_posted": False,
+
             "discord_posted_at": None,
 
             "x_posted": False,
+
             "x_posted_at": None,
+
             "x_post_id": None
         },
 
         "selection": {
-            "minimum_publication_score": MIN_PUBLICATION_SCORE,
-            "total_sections": len(news["sections"]),
-            "selected_sections": len(items)
+
+            "minimum_publication_score":
+                MIN_PUBLICATION_SCORE,
+
+            "total_sections":
+                len(news["sections"]),
+
+            "selected_sections":
+                len(items)
         },
 
         "items": items
@@ -482,34 +722,194 @@ def create_content_queue(news, analyses):
 
 
 # ============================================================
-# CYCLE STATE
+# QUEUE MIGRATION / LOAD
 # ============================================================
 
 def load_queue():
-    return load_json(
+
+    queue = load_json(
         QUEUE_FILE,
         default=None
     )
 
+    if not queue:
+        return None
 
-def is_same_article(queue, current_url):
+    migrated = False
+
+    # --------------------------------------------------------
+    # GENERAL PUBLICATION
+    # --------------------------------------------------------
+
+    if "general_publication" not in queue:
+
+        print()
+        print(
+            "⚠️ Cola antigua detectada."
+        )
+
+        print(
+            "Migrando content_queue.json..."
+        )
+
+        queue["general_publication"] = {
+
+            "discord_posted": False,
+
+            "discord_posted_at": None,
+
+            "x_posted": False,
+
+            "x_posted_at": None,
+
+            "x_post_id": None
+        }
+
+        migrated = True
+
+    else:
+
+        general = queue[
+            "general_publication"
+        ]
+
+        if "discord_posted" not in general:
+
+            general["discord_posted"] = False
+
+            migrated = True
+
+        if "discord_posted_at" not in general:
+
+            general["discord_posted_at"] = None
+
+            migrated = True
+
+        if "x_posted" not in general:
+
+            general["x_posted"] = False
+
+            migrated = True
+
+        if "x_posted_at" not in general:
+
+            general["x_posted_at"] = None
+
+            migrated = True
+
+        if "x_post_id" not in general:
+
+            general["x_post_id"] = None
+
+            migrated = True
+
+    # --------------------------------------------------------
+    # ITEMS
+    # --------------------------------------------------------
+
+    for item in queue.get(
+        "items",
+        []
+    ):
+
+        if "published" not in item:
+
+            item["published"] = False
+
+            migrated = True
+
+        if "published_at" not in item:
+
+            item["published_at"] = None
+
+            migrated = True
+
+        if "platform" not in item:
+
+            item["platform"] = None
+
+            migrated = True
+
+        if "post_id" not in item:
+
+            item["post_id"] = None
+
+            migrated = True
+
+        if "generated_text" not in item:
+
+            item["generated_text"] = None
+
+            migrated = True
+
+        if "generated_at" not in item:
+
+            item["generated_at"] = None
+
+            migrated = True
+
+    # --------------------------------------------------------
+    # SAVE MIGRATION
+    # --------------------------------------------------------
+
+    if migrated:
+
+        save_json(
+            QUEUE_FILE,
+            queue
+        )
+
+        print(
+            "✅ Migración completada."
+        )
+
+    return queue
+
+
+# ============================================================
+# ARTICLE COMPARISON
+# ============================================================
+
+def is_same_article(
+    queue,
+    current_url
+):
 
     if not queue:
         return False
 
-    article = queue.get("article", {})
+    article = queue.get(
+        "article",
+        {}
+    )
 
-    return article.get("url") == current_url
+    stored_url = article.get(
+        "url"
+    )
+
+    return stored_url == current_url
 
 
-def get_next_pending_item(queue):
+# ============================================================
+# NEXT PENDING CONTENT
+# ============================================================
 
-    items = queue.get("items", [])
+def get_next_pending_item(
+    queue
+):
+
+    items = queue.get(
+        "items",
+        []
+    )
 
     pending = [
         item
         for item in items
-        if not item.get("published", False)
+        if not item.get(
+            "published",
+            False
+        )
     ]
 
     if not pending:
@@ -531,43 +931,89 @@ def get_next_pending_item(queue):
 
 def main():
 
-    print("========================================")
-    print("CALAVERA RUST NEWS")
-    print("========================================")
+    print(
+        "========================================"
+    )
+
+    print(
+        "CALAVERA RUST NEWS"
+    )
+
+    print(
+        "========================================"
+    )
+
+    # --------------------------------------------------------
+    # GET LATEST ARTICLE
+    # --------------------------------------------------------
 
     current_url = get_latest_news()
 
     print()
-    print(f"Último artículo detectado:")
-    print(current_url)
+    print(
+        "Último artículo detectado:"
+    )
+
+    print(
+        current_url
+    )
+
+    # --------------------------------------------------------
+    # LOAD CURRENT QUEUE
+    # --------------------------------------------------------
 
     queue = load_queue()
 
-    # --------------------------------------------------------
+    # ========================================================
     # NEW ARTICLE
-    # --------------------------------------------------------
+    # ========================================================
 
-    if not is_same_article(queue, current_url):
+    if not is_same_article(
+        queue,
+        current_url
+    ):
 
         print()
-        print("🆕 NUEVO PATCH DETECTADO")
+        print(
+            "🆕 NUEVO PATCH DETECTADO"
+        )
+
         print()
 
-        news = parse_news(current_url)
+        # ----------------------------------------------------
+        # PARSE
+        # ----------------------------------------------------
+
+        news = parse_news(
+            current_url
+        )
 
         save_json(
             LATEST_NEWS_FILE,
             news
         )
 
-        print("Analizando secciones con Gemini...")
+        # ----------------------------------------------------
+        # GEMINI
+        # ----------------------------------------------------
 
-        analyses = analyze_all_sections(news)
+        print()
+        print(
+            "Analizando secciones con Gemini..."
+        )
+
+        analyses = analyze_all_sections(
+            news
+        )
 
         save_json(
             ANALYSIS_FILE,
             analyses
         )
+
+        # ----------------------------------------------------
+        # CREATE QUEUE
+        # ----------------------------------------------------
 
         queue = create_content_queue(
             news,
@@ -579,13 +1025,27 @@ def main():
             queue
         )
 
+        # ----------------------------------------------------
+        # RESULT
+        # ----------------------------------------------------
+
         print()
-        print("========================================")
-        print("NUEVO CICLO CREADO")
-        print("========================================")
 
         print(
-            f"Patch: {queue['article']['title']}"
+            "========================================"
+        )
+
+        print(
+            "NUEVO CICLO CREADO"
+        )
+
+        print(
+            "========================================"
+        )
+
+        print(
+            f"Patch: "
+            f"{queue['article']['title']}"
         )
 
         print(
@@ -599,62 +1059,97 @@ def main():
         )
 
         print()
-        print("Publicación general:")
+
+        print(
+            "Publicación general:"
+        )
+
         print(
             f"Discord: "
             f"{queue['general_publication']['discord_posted']}"
         )
+
         print(
             f"X: "
             f"{queue['general_publication']['x_posted']}"
         )
 
         print()
+
         print(
-            "⚠️ Todavía no se publica ningún contenido."
+            "⚠️ Todavía no se publica "
+            "ningún contenido."
         )
 
         print(
-            "El ciclo quedó preparado para la "
-            "siguiente integración."
+            "El ciclo quedó preparado."
         )
 
         return
 
-    # --------------------------------------------------------
+    # ========================================================
     # EXISTING ARTICLE
-    # --------------------------------------------------------
+    # ========================================================
 
     print()
-    print("♻️ PATCH ACTUAL YA ESTÁ EN COLA")
 
     print(
-        f"Patch: {queue['article']['title']}"
+        "♻️ PATCH ACTUAL YA ESTÁ EN COLA"
+    )
+
+    print(
+        f"Patch: "
+        f"{queue['article']['title']}"
+    )
+
+    # --------------------------------------------------------
+    # GENERAL PUBLICATION STATE
+    # --------------------------------------------------------
+
+    general = queue.get(
+        "general_publication",
+        {}
     )
 
     print()
+
     print(
         f"Discord general publicado: "
-        f"{queue['general_publication']['discord_posted']}"
+        f"{general.get('discord_posted', False)}"
     )
 
     print(
         f"X general publicado: "
-        f"{queue['general_publication']['x_posted']}"
+        f"{general.get('x_posted', False)}"
     )
 
-    next_item = get_next_pending_item(queue)
+    # --------------------------------------------------------
+    # NEXT ITEM
+    # --------------------------------------------------------
 
-    # --------------------------------------------------------
-    # NOTHING LEFT
-    # --------------------------------------------------------
+    next_item = get_next_pending_item(
+        queue
+    )
+
+    # ========================================================
+    # CYCLE COMPLETED
+    # ========================================================
 
     if next_item is None:
 
         print()
-        print("========================================")
-        print("CICLO COMPLETADO")
-        print("========================================")
+
+        print(
+            "========================================"
+        )
+
+        print(
+            "CICLO COMPLETADO"
+        )
+
+        print(
+            "========================================"
+        )
 
         print(
             "No quedan secciones pendientes "
@@ -663,36 +1158,51 @@ def main():
 
         return
 
-    # --------------------------------------------------------
+    # ========================================================
     # NEXT CONTENT
-    # --------------------------------------------------------
+    # ========================================================
 
     print()
-    print("========================================")
-    print("SIGUIENTE CONTENIDO PENDIENTE")
-    print("========================================")
 
     print(
-        f"Priority: {next_item['priority']}"
+        "========================================"
     )
 
     print(
-        f"Título: {next_item['title']}"
+        "SIGUIENTE CONTENIDO PENDIENTE"
     )
 
     print(
-        f"Score: {next_item['publication_score']}"
+        "========================================"
     )
 
     print(
-        f"Tipo: {next_item['content_type']}"
+        f"Priority: "
+        f"{next_item['priority']}"
     )
 
     print(
-        f"Publicado: {next_item['published']}"
+        f"Título: "
+        f"{next_item['title']}"
+    )
+
+    print(
+        f"Score: "
+        f"{next_item['publication_score']}"
+    )
+
+    print(
+        f"Tipo: "
+        f"{next_item['content_type']}"
+    )
+
+    print(
+        f"Publicado: "
+        f"{next_item['published']}"
     )
 
     print()
+
     print(
         "⚠️ Todavía NO se marca como publicado."
     )
@@ -702,6 +1212,10 @@ def main():
         "en el siguiente paso."
     )
 
+
+# ============================================================
+# ENTRY POINT
+# ============================================================
 
 if __name__ == "__main__":
     main()
