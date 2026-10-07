@@ -12,17 +12,37 @@ BASE_URL = "https://rust.facepunch.com"
 NEWS_URL = f"{BASE_URL}/news/"
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0"
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 "
+        "(KHTML, like Gecko) "
+        "Chrome/154.0.0.0 Safari/537.36"
+    )
 }
 
 GEMINI_MODEL = "gemini-3.5-flash-lite"
 
-# Puntaje mínimo para considerar una sección
-# como contenido publicable individualmente.
 MIN_PUBLICATION_SCORE = 75
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+PROMPT_DIR = os.path.join(
+    BASE_DIR,
+    "prompt"
+)
+
+DATA_DIR = os.path.join(
+    BASE_DIR,
+    "data"
+)
+
+
+# =========================================================
+# HTTP
+# =========================================================
 
 def get_page(url):
+
     response = requests.get(
         url,
         headers=HEADERS,
@@ -34,7 +54,32 @@ def get_page(url):
     return response.text
 
 
+# =========================================================
+# PROMPTS
+# =========================================================
+
+def load_prompt(filename):
+
+    path = os.path.join(
+        PROMPT_DIR,
+        filename
+    )
+
+    with open(
+        path,
+        "r",
+        encoding="utf-8"
+    ) as file:
+
+        return file.read()
+
+
+# =========================================================
+# FIND LATEST NEWS
+# =========================================================
+
 def get_latest_news():
+
     html = get_page(NEWS_URL)
 
     soup = BeautifulSoup(
@@ -42,18 +87,12 @@ def get_latest_news():
         "html.parser"
     )
 
-    news_links = soup.select(
-        "a[href*='/news/']"
-    )
-
-    for link in news_links:
+    for link in soup.select('a[href*="/news/"]'):
 
         href = link.get("href")
 
         if not href:
             continue
-
-        href = href.strip()
 
         if href == "/news/":
             continue
@@ -61,43 +100,59 @@ def get_latest_news():
         if not href.startswith("/news/"):
             continue
 
-        if href.count("/") < 2:
-            continue
-
-        return urljoin(
+        url = urljoin(
             BASE_URL,
             href
         )
 
-    raise Exception(
-        "No se pudo encontrar la última noticia."
+        return url
+
+    raise RuntimeError(
+        "No se encontró ningún artículo de Rust."
     )
 
+
+# =========================================================
+# PARSE NEWS
+# =========================================================
 
 def parse_news(url):
 
     html = get_page(url)
-    soup = BeautifulSoup(html, "html.parser")
+
+    soup = BeautifulSoup(
+        html,
+        "html.parser"
+    )
 
     print("DEBUG metadata:")
 
     print(
         "HTML title:",
-        soup.title.get_text(" ", strip=True)
+        soup.title.get_text(
+            " ",
+            strip=True
+        )
         if soup.title
         else "NO ENCONTRADO"
     )
 
     print(
         "h1:",
-        soup.find("h1").get_text(" ", strip=True)
+        soup.find("h1").get_text(
+            " ",
+            strip=True
+        )
         if soup.find("h1")
         else "NO ENCONTRADO"
     )
 
     print(
         "time:",
-        soup.find("time").get_text(" ", strip=True)
+        soup.find("time").get_text(
+            " ",
+            strip=True
+        )
         if soup.find("time")
         else "NO ENCONTRADO"
     )
@@ -108,49 +163,69 @@ def parse_news(url):
             [
                 a
                 for a in soup.find_all("a")
-                if a.get_text(" ", strip=True).upper() == "DEVBLOG"
+                if a.get_text(
+                    " ",
+                    strip=True
+                ).upper() == "DEVBLOG"
             ]
         )
     )
 
-    # ---------------------------------------------------------
+    # -----------------------------------------------------
     # TITLE
-    # ---------------------------------------------------------
+    # -----------------------------------------------------
 
     title = ""
 
     if soup.title:
-        title = soup.title.get_text(" ", strip=True)
+
+        title = soup.title.get_text(
+            " ",
+            strip=True
+        )
 
     if not title:
-        og_title = soup.select_one('meta[property="og:title"]')
+
+        og_title = soup.select_one(
+            'meta[property="og:title"]'
+        )
 
         if og_title:
-            title = og_title.get("content", "").strip()
+
+            title = og_title.get(
+                "content",
+                ""
+            ).strip()
 
     if not title:
+
         h1 = soup.find("h1")
 
         if h1:
-            title = h1.get_text(" ", strip=True)
 
-    # ---------------------------------------------------------
+            title = h1.get_text(
+                " ",
+                strip=True
+            )
+
+    # -----------------------------------------------------
     # DATE
-    # ---------------------------------------------------------
+    # -----------------------------------------------------
 
     date = ""
 
-    # 1. Buscar en <time>
     time_element = soup.find("time")
 
     if time_element:
 
         date = (
             time_element.get("datetime")
-            or time_element.get_text(" ", strip=True)
+            or time_element.get_text(
+                " ",
+                strip=True
+            )
         )
 
-    # 2. Buscar metadata estándar
     if not date:
 
         date_selectors = [
@@ -165,7 +240,9 @@ def parse_news(url):
 
         for selector in date_selectors:
 
-            element = soup.select_one(selector)
+            element = soup.select_one(
+                selector
+            )
 
             if element:
 
@@ -176,13 +253,17 @@ def parse_news(url):
                 ).strip()
 
                 if value:
+
                     date = value
+
                     break
 
-    # 3. Buscar fecha dentro del texto visible
     if not date:
 
-        page_text = soup.get_text(" ", strip=True)
+        page_text = soup.get_text(
+            " ",
+            strip=True
+        )
 
         date_patterns = [
             r"\b\d{1,2}\s+[A-Za-z]+\s+\d{4}\b",
@@ -199,10 +280,11 @@ def parse_news(url):
             )
 
             if match:
+
                 date = match.group(0)
+
                 break
 
-    # 4. Buscar directamente en el HTML
     if not date:
 
         date_patterns = [
@@ -220,38 +302,50 @@ def parse_news(url):
             )
 
             if match:
+
                 date = match.group(0)
+
                 break
 
-    # ---------------------------------------------------------
+    # -----------------------------------------------------
     # TYPE
-    # ---------------------------------------------------------
+    # -----------------------------------------------------
 
     news_type = ""
 
     for element in soup.find_all("a"):
 
-        text = element.get_text(" ", strip=True)
+        text = element.get_text(
+            " ",
+            strip=True
+        )
 
         if text.upper() == "DEVBLOG":
 
             news_type = "DEVBLOG"
+
             break
 
     if not news_type:
 
-        page_text = soup.get_text(" ", strip=True)
+        page_text = soup.get_text(
+            " ",
+            strip=True
+        )
 
         if "DEVBLOG" in page_text.upper():
+
             news_type = "DEVBLOG"
 
-    # ---------------------------------------------------------
+    # -----------------------------------------------------
     # SECTIONS
-    # ---------------------------------------------------------
+    # -----------------------------------------------------
 
     sections = []
 
-    section_blocks = soup.select(".news-section-block")
+    section_blocks = soup.select(
+        ".news-section-block"
+    )
 
     for block in section_blocks:
 
@@ -280,6 +374,7 @@ def parse_news(url):
         author = ""
 
         if author_element:
+
             author = author_element.get_text(
                 " ",
                 strip=True
@@ -309,7 +404,10 @@ def parse_news(url):
                 if src:
 
                     images.append(
-                        urljoin(BASE_URL, src)
+                        urljoin(
+                            BASE_URL,
+                            src
+                        )
                     )
 
         sections.append({
@@ -319,10 +417,25 @@ def parse_news(url):
             "images": images
         })
 
-    print("Secciones encontradas:", len(sections))
-    print("Título detectado:", title)
-    print("Fecha detectada:", date)
-    print("Tipo detectado:", news_type)
+    print(
+        "Secciones encontradas:",
+        len(sections)
+    )
+
+    print(
+        "Título detectado:",
+        title
+    )
+
+    print(
+        "Fecha detectada:",
+        date
+    )
+
+    print(
+        "Tipo detectado:",
+        news_type
+    )
 
     return {
         "url": url,
@@ -332,15 +445,20 @@ def parse_news(url):
         "sections": sections
     }
 
+
+# =========================================================
+# SAVE NEWS
+# =========================================================
+
 def save_news(news):
 
-    os.makedirs(
-        "data",
-        exist_ok=True
+    path = os.path.join(
+        DATA_DIR,
+        "latest_news.json"
     )
 
     with open(
-        "data/latest_news.json",
+        path,
         "w",
         encoding="utf-8"
     ) as file:
@@ -353,15 +471,24 @@ def save_news(news):
         )
 
 
+# =========================================================
+# GEMINI ANALYSIS
+# =========================================================
+
 def analyze_all_sections(news):
 
-    print("Analizando secciones con Gemini...")
+    print(
+        "Analizando secciones con Gemini..."
+    )
 
     sections = news["sections"]
 
     sections_text = []
 
-    for index, section in enumerate(sections, start=1):
+    for index, section in enumerate(
+        sections,
+        start=1
+    ):
 
         sections_text.append(
             f"""
@@ -378,234 +505,38 @@ Contenido:
 """
         )
 
-    article_text = "\n".join(sections_text)
-
-    prompt = f"""
-Sos un editor de contenido especializado en Rust y en comunidades de jugadores.
-
-Tenés que analizar un Devblog completo de Rust y decidir QUÉ partes realmente
-merecen convertirse en contenido independiente para redes sociales.
-
-IMPORTANTE:
-No quiero maximizar la cantidad de publicaciones.
-Quiero seleccionar solamente los cambios que realmente tienen valor para
-los jugadores y para una cuenta de contenido de Rust.
-
-DEVblog:
-Título: {news["title"]}
-Fecha: {news["date"]}
-Tipo: {news["type"]}
-
-SECCIONES:
-{article_text}
-
-Para CADA sección devolvé exactamente un objeto JSON con esta estructura:
-
-{{
-  "title": "título original exacto de la sección",
-  "importance": 0,
-  "interaction_potential": 0,
-  "social_value": 0,
-  "publication_score": 0,
-  "recommended": true,
-  "publication_type": "standalone",
-  "content_type": "news",
-  "reason": "explicación breve en español latinoamericano"
-}}
-
-REGLAS:
-
-1. title
-Debe ser EXACTAMENTE el título original de la sección.
-No lo traduzcas.
-No lo cambies.
-No lo resumas.
-
-2. importance
-Del 1 al 10.
-¿Qué tan importante es este cambio para los jugadores de Rust?
-
-10 = cambio enorme que afecta fuertemente al gameplay o a la experiencia.
-1 = cambio prácticamente irrelevante para un jugador común.
-
-3. interaction_potential
-Del 1 al 10.
-
-¿Qué tan probable es que genere:
-- comentarios
-- debate
-- opiniones
-- curiosidad
-- discusiones entre jugadores
-- reacciones
-
-No confundas importancia técnica con capacidad de generar conversación.
-
-4. social_value
-Del 1 al 10.
-
-Pensá como un creador de contenido de Rust.
-
-Pregunta:
-"¿Vale la pena gastar UNA publicación individual de X en esto?"
-
-No pienses como desarrollador.
-Pensá como creador.
-
-5. publication_score
-Del 1 al 100.
-
-Este es el criterio MÁS IMPORTANTE.
-
-Respondé:
-"Si solamente pudiera publicar unas pocas cosas de este Devblog,
-¿qué tan arriba estaría esta sección?"
-
-Una sección puede ser importante pero NO merecer una publicación independiente.
-
-6. recommended
-
-Debe ser true solamente cuando realmente recomendarías convertir esta
-sección en contenido.
-
-No pongas true simplemente porque el cambio sea interesante.
-
-7. publication_type
-
-Solo existen tres valores:
-
-"standalone"
-"related"
-"skip"
-
-Usá "standalone" SOLO si la sección tiene suficiente entidad para ser
-un contenido independiente.
-
-MUY IMPORTANTE:
-
-Si una sección forma parte natural de otro cambio más grande del mismo
-Devblog, NO debe ser standalone.
-
-Por ejemplo:
-
-Si el Devblog presenta un nuevo sistema "LIVESTOCK" y luego tiene secciones
-sobre economía, leche, animales, cercos, etc., esas secciones NO deberían
-convertirse automáticamente en publicaciones independientes.
-
-En ese caso:
-
-LIVESTOCK → standalone
-
-Cambios menores relacionados con LIVESTOCK → related
-
-Cambios sin valor suficiente → skip
-
-"related" significa:
-"Es interesante, pero sería mejor mencionarlo como parte de otro contenido
-y NO gastar una publicación independiente en esto."
-
-"standalone" significa:
-"Si publico solamente esto, el contenido sigue teniendo sentido y merece
-una publicación propia."
-
-"skip" significa:
-"No merece contenido social."
-
-8. content_type
-
-Elegí uno:
-
-"news"
-"question"
-"debate"
-"fact"
-"curiosity"
-
-9. reason
-
-Explicá brevemente en español latinoamericano por qué tomaste la decisión.
-
-REGLA EDITORIAL PRINCIPAL:
-
-CALIDAD > CANTIDAD.
-
-Un Devblog NO necesita producir muchos posts.
-
-Es perfectamente válido que de 24 secciones solamente 4, 5 o 6 sean
-realmente publicables.
-
-También es válido que una sección con publication_score alto sea "related"
-si su información debería formar parte de otro contenido.
-
-NO conviertas automáticamente en standalone:
-- pequeños cambios
-- cambios técnicos internos
-- mejoras visuales menores
-- cambios de UI
-- cambios de rendimiento que el jugador casi no percibe
-- detalles secundarios de una feature principal
-- información repetida de otra sección
-- partes pequeñas de un sistema más grande
-
-PRIORIZÁ:
-
-- cambios importantes de gameplay
-- nuevas mecánicas
-- cambios que afectan estrategias
-- cambios que pueden generar debate
-- cambios que sorprenden a los jugadores
-- cambios que modifican cómo se juega Rust
-- cambios que generan preguntas o discusión
-- novedades suficientemente grandes para funcionar como publicación propia
-
-REGLA SOBRE SECCIONES RELACIONADAS:
-
-Antes de marcar una sección como standalone preguntate:
-
-"¿Podría publicar esto mañana como un post independiente sin repetir
-información que ya publiqué sobre otra sección?"
-
-Si la respuesta es NO → related.
-
-Si la respuesta es SÍ → puede ser standalone.
-
-IMPORTANTE:
-
-No generes tweets.
-No escribas textos para X.
-No escribas titulares nuevos.
-
-Solo analizá y clasificá las secciones.
-
-Todos los campos de texto generados por vos deben estar en español
-latinoamericano, EXCEPTO:
-- title, que debe conservarse exactamente
-- nombres oficiales de Rust
-- nombres de items, monumentos, sistemas o mecánicas que oficialmente
-  estén en inglés
-
-Devolvé ÚNICAMENTE un JSON válido con este formato:
-
-[
-  {{
-    "title": "...",
-    "importance": 0,
-    "interaction_potential": 0,
-    "social_value": 0,
-    "publication_score": 0,
-    "recommended": true,
-    "publication_type": "standalone",
-    "content_type": "news",
-    "reason": "..."
-  }}
-]
-
-No agregues markdown.
-No agregues explicaciones fuera del JSON.
-"""
+    article_sections = "\n".join(
+        sections_text
+    )
+
+    prompt_template = load_prompt(
+        "analyze_devblog_sections.txt"
+    )
+
+    prompt = (
+        prompt_template
+        .replace(
+            "{{ARTICLE_TITLE}}",
+            news["title"]
+        )
+        .replace(
+            "{{ARTICLE_DATE}}",
+            news["date"]
+        )
+        .replace(
+            "{{ARTICLE_TYPE}}",
+            news["type"]
+        )
+        .replace(
+            "{{SECTIONS}}",
+            article_sections
+        )
+    )
 
     client = genai.Client(
-        api_key=os.environ.get("GEMINI_API_KEY")
+        api_key=os.environ.get(
+            "GEMINI_API_KEY"
+        )
     )
 
     response = client.models.generate_content(
@@ -618,128 +549,119 @@ No agregues explicaciones fuera del JSON.
 
     try:
 
-        analyses = json.loads(response.text)
+        analyses = json.loads(
+            response.text
+        )
 
     except json.JSONDecodeError:
 
-        print("ERROR: Gemini no devolvió JSON válido.")
+        print(
+            "ERROR: Gemini no devolvió JSON válido."
+        )
+
         print(response.text)
 
         raise
 
     return analyses
 
+
+# =========================================================
+# SAVE ANALYSIS
+# =========================================================
+
 def save_analysis(
     news,
     analyses
 ):
 
-    os.makedirs(
-        "data",
-        exist_ok=True
-    )
-
-    data = {
-        "url": news["url"],
-        "title": news["title"],
-        "date": news["date"],
-        "type": news["type"],
+    output = {
+        "article": {
+            "url": news["url"],
+            "title": news["title"],
+            "date": news["date"],
+            "type": news["type"]
+        },
         "analyses": analyses
     }
 
+    path = os.path.join(
+        DATA_DIR,
+        "news_analysis.json"
+    )
+
     with open(
-        "data/news_analysis.json",
+        path,
         "w",
         encoding="utf-8"
     ) as file:
 
         json.dump(
-            data,
+            output,
             file,
             ensure_ascii=False,
             indent=2
         )
 
 
+# =========================================================
+# CREATE CONTENT QUEUE
+# =========================================================
+
 def create_content_queue(
     news,
     analyses
 ):
 
-    queue = []
+    print(
+        "Creando content queue..."
+    )
 
-    for section, analysis in zip(
-        news["sections"],
-        analyses
-    ):
+    section_map = {
+        section["title"]: section
+        for section in news["sections"]
+    }
 
-        publication_score = analysis.get(
-            "publication_score",
-            0
-        )
+    items = []
+
+    for analysis in analyses:
 
         publication_type = analysis.get(
             "publication_type",
             "skip"
         )
 
-        # ======================================
-        # FINAL SELECTION RULES
-        # ======================================
-        #
-        # standalone:
-        #   puede ser publicación individual.
-        #
-        # related:
-        #   se conserva en el análisis pero NO
-        #   entra como publicación individual.
-        #
-        # skip:
-        #   se descarta.
-        #
+        publication_score = analysis.get(
+            "publication_score",
+            0
+        )
 
         if publication_type in (
             "skip",
             "related"
         ):
-
             continue
 
-        if publication_score < (
-            MIN_PUBLICATION_SCORE
-        ):
-
+        if publication_score < MIN_PUBLICATION_SCORE:
             continue
 
-        queue_item = {
+        section = section_map.get(
+            analysis["title"]
+        )
 
-            # ----------------------------------
-            # Article context
-            # ----------------------------------
+        if not section:
+            continue
 
+        item = {
             "article_url": news["url"],
-
             "article_title": news["title"],
-
             "article_date": news["date"],
-
             "article_type": news["type"],
 
-            # ----------------------------------
-            # Section
-            # ----------------------------------
-
             "title": section["title"],
-
             "author": section["author"],
-
             "content": section["content"],
-
             "images": section["images"],
-
-            # ----------------------------------
-            # AI analysis
-            # ----------------------------------
 
             "importance": analysis.get(
                 "importance",
@@ -775,26 +697,18 @@ def create_content_queue(
                 ""
             ),
 
-            # ----------------------------------
-            # Publication state
-            # ----------------------------------
-
             "published": False,
-
             "published_at": None,
-
             "platform": None
         }
 
-        queue.append(
-            queue_item
-        )
+        items.append(item)
 
-    # ==========================================
+    # -----------------------------------------------------
     # SORT
-    # ==========================================
+    # -----------------------------------------------------
 
-    queue.sort(
+    items.sort(
         key=lambda item: (
             item["publication_score"],
             item["interaction_potential"],
@@ -803,23 +717,18 @@ def create_content_queue(
         reverse=True
     )
 
-    # ==========================================
+    # -----------------------------------------------------
     # PRIORITY
-    # ==========================================
+    # -----------------------------------------------------
 
     for index, item in enumerate(
-        queue,
+        items,
         start=1
     ):
 
         item["priority"] = index
 
-    # ==========================================
-    # FINAL QUEUE OBJECT
-    # ==========================================
-
-    data = {
-
+    queue = {
         "article": {
             "url": news["url"],
             "title": news["title"],
@@ -828,46 +737,42 @@ def create_content_queue(
         },
 
         "selection": {
-
-            "minimum_publication_score":
-                MIN_PUBLICATION_SCORE,
-
-            "total_sections":
-                len(news["sections"]),
-
-            "selected_sections":
-                len(queue)
+            "minimum_publication_score": MIN_PUBLICATION_SCORE,
+            "total_sections": len(
+                news["sections"]
+            ),
+            "selected_sections": len(
+                items
+            )
         },
 
-        "items": queue
+        "items": items
     }
 
-    # ==========================================
-    # SAVE
-    # ==========================================
+    path = os.path.join(
+        DATA_DIR,
+        "content_queue.json"
+    )
 
     with open(
-        "data/content_queue.json",
+        path,
         "w",
         encoding="utf-8"
     ) as file:
 
         json.dump(
-            data,
+            queue,
             file,
             ensure_ascii=False,
             indent=2
         )
 
-    # ==========================================
-    # LOG
-    # ==========================================
-
     print(
-        f"Contenido seleccionado: {len(queue)}"
+        "Contenido seleccionado:",
+        len(items)
     )
 
-    for item in queue:
+    for item in items:
 
         print(
             f'{item["priority"]}. '
@@ -876,52 +781,27 @@ def create_content_queue(
         )
 
 
+# =========================================================
+# MAIN
+# =========================================================
+
 def main():
 
-    print(
-        "Buscando última noticia de Rust..."
-    )
+    print("Buscando último Rust Devblog...")
 
     latest_url = get_latest_news()
 
     print(
-        f"Última noticia: {latest_url}"
-    )
-
-    print(
-        "Parseando noticia..."
+        "Último artículo:",
+        latest_url
     )
 
     news = parse_news(
         latest_url
     )
 
-    print(
-        f'Secciones encontradas: '
-        f'{len(news["sections"])}'
-    )
-
-    print(
-        f'Título detectado: '
-        f'{news["title"]}'
-    )
-
-    print(
-        f'Fecha detectada: '
-        f'{news["date"]}'
-    )
-
-    print(
-        f'Tipo detectado: '
-        f'{news["type"]}'
-    )
-
     save_news(
         news
-    )
-
-    print(
-        "Analizando secciones con Gemini..."
     )
 
     analyses = analyze_all_sections(
@@ -931,10 +811,6 @@ def main():
     save_analysis(
         news,
         analyses
-    )
-
-    print(
-        "Creando content queue..."
     )
 
     create_content_queue(
