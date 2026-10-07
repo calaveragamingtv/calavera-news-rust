@@ -343,12 +343,34 @@ def scrape_article(url):
         f"Título detectado: {article_title}"
     )
 
+    # --------------------------------------------------------
+    # IMAGENES GENERALES DEL PATCH
+    # --------------------------------------------------------
+
+    article_images = []
+
+    for section in sections:
+        for image_url in section.get(
+            "images",
+            []
+        ):
+            if image_url not in article_images:
+                article_images.append(
+                    image_url
+                )
+
+    print(
+        f"Imágenes generales encontradas: "
+        f"{len(article_images)}"
+    )
+
     return {
         "url": url,
         "title": article_title,
         "date": article_date,
         "type": article_type,
-        "sections": sections
+        "sections": sections,
+        "images": article_images
     }
 
 
@@ -597,7 +619,15 @@ def build_content_queue(
             "url": article["url"],
             "title": article["title"],
             "date": article["date"],
-            "type": article["type"]
+            "type": article["type"],
+
+            # IMPORTANTE:
+            # Guardamos todas las imágenes del patch
+            # para poder usar la primera como fallback.
+            "images": article.get(
+                "images",
+                []
+            )
         },
 
         "general_publication": {
@@ -858,20 +888,185 @@ def buffer_create_post(
 
 
 # ============================================================
+# IMAGEN
+# ============================================================
+
+def is_valid_image(
+    image_url
+):
+    if not image_url:
+        return False
+
+    try:
+        response = requests.head(
+            image_url,
+            timeout=15,
+            allow_redirects=True
+        )
+
+        if response.status_code < 400:
+            return True
+
+    except Exception:
+        pass
+
+    # Algunos servidores no responden correctamente
+    # a HEAD. Intentamos GET como fallback.
+    try:
+        response = requests.get(
+            image_url,
+            timeout=15,
+            allow_redirects=True,
+            stream=True
+        )
+
+        if response.status_code < 400:
+            return True
+
+    except Exception:
+        pass
+
+    return False
+
+
+def get_first_valid_image(
+    item
+):
+    images = item.get(
+        "images"
+    ) or []
+
+    for image_url in images:
+        if is_valid_image(
+            image_url
+        ):
+            return image_url
+
+    return None
+
+
+def get_first_patch_image(
+    queue
+):
+    article = queue.get(
+        "article",
+        {}
+    )
+
+    # --------------------------------------------------------
+    # PRIMERO: imágenes generales guardadas en article
+    # --------------------------------------------------------
+
+    article_images = article.get(
+        "images"
+    ) or []
+
+    for image_url in article_images:
+        if is_valid_image(
+            image_url
+        ):
+            return image_url
+
+    # --------------------------------------------------------
+    # FALLBACK PARA COLAS ANTIGUAS
+    # Busca imágenes dentro de las secciones.
+    # --------------------------------------------------------
+
+    for item in queue.get(
+        "items",
+        []
+    ):
+        images = item.get(
+            "images"
+        ) or []
+
+        for image_url in images:
+            if is_valid_image(
+                image_url
+            ):
+                return image_url
+
+    return None
+
+
+def get_image_for_section(
+    queue,
+    item
+):
+    # --------------------------------------------------------
+    # 1. Imagen propia de la sección
+    # --------------------------------------------------------
+
+    image_url = get_first_valid_image(
+        item
+    )
+
+    if image_url:
+        return image_url
+
+    # --------------------------------------------------------
+    # 2. Fallback: primera imagen del patch
+    # --------------------------------------------------------
+
+    print()
+    print(
+        "La sección no tiene una imagen válida."
+    )
+
+    print(
+        "Buscando primera imagen válida "
+        "del patch como fallback..."
+    )
+
+    return get_first_patch_image(
+        queue
+    )
+
+
+# ============================================================
 # DISCORD
 # ============================================================
 
-def publish_discord(text):
+def publish_discord(
+    text,
+    image_url=None,
+    article_url=None,
+    article_title=None
+):
     if not DISCORD_WEBHOOK_URL:
         raise RuntimeError(
             "Falta DISCORD_WEBHOOK_URL"
         )
 
+    payload = {
+        "content": text
+    }
+
+    # --------------------------------------------------------
+    # EMBED DEL PATCH
+    # --------------------------------------------------------
+
+    embed = {}
+
+    if article_title:
+        embed["title"] = article_title
+
+    if article_url:
+        embed["url"] = article_url
+
+    if image_url:
+        embed["image"] = {
+            "url": image_url
+        }
+
+    if embed:
+        payload["embeds"] = [
+            embed
+        ]
+
     response = requests.post(
         DISCORD_WEBHOOK_URL,
-        json={
-            "content": text
-        },
+        json=payload,
         timeout=30
     )
 
@@ -951,6 +1146,30 @@ def process_general_announcement(
         )
 
     # --------------------------------------------------------
+    # BUSCAR IMAGEN DEL PATCH
+    # --------------------------------------------------------
+
+    general_image_url = get_first_patch_image(
+        queue
+    )
+
+    if general_image_url:
+        print()
+        print(
+            "Imagen general del patch encontrada:"
+        )
+        print(
+            general_image_url
+        )
+
+    else:
+        print()
+        print(
+            "ADVERTENCIA: no se encontró "
+            "ninguna imagen válida para el patch."
+        )
+
+    # --------------------------------------------------------
     # PUBLICAR X
     # --------------------------------------------------------
 
@@ -963,8 +1182,11 @@ def process_general_announcement(
             "en X mediante Buffer..."
         )
 
+        # IMPORTANTE:
+        # El anuncio general también lleva imagen.
         post = buffer_create_post(
-            publication["x_text"]
+            publication["x_text"],
+            image_url=general_image_url
         )
 
         publication["x_posted"] = True
@@ -996,8 +1218,20 @@ def process_general_announcement(
             "en Discord..."
         )
 
+        article = queue.get(
+            "article",
+            {}
+        )
+
         publish_discord(
-            publication["discord_text"]
+            publication["discord_text"],
+            image_url=general_image_url,
+            article_url=article.get(
+                "url"
+            ),
+            article_title=article.get(
+                "title"
+            )
         )
 
         publication["discord_posted"] = True
@@ -1010,7 +1244,7 @@ def process_general_announcement(
 
         print(
             "Anuncio general publicado "
-            "en Discord."
+            "en Discord con imagen y link."
         )
 
     return (
@@ -1108,37 +1342,6 @@ def generate_x_post(
 
 
 # ============================================================
-# IMAGEN
-# ============================================================
-
-def get_first_valid_image(
-    item
-):
-    images = item.get(
-        "images"
-    ) or []
-
-    for image_url in images:
-        if not image_url:
-            continue
-
-        try:
-            response = requests.head(
-                image_url,
-                timeout=15,
-                allow_redirects=True
-            )
-
-            if response.status_code < 400:
-                return image_url
-
-        except Exception:
-            continue
-
-    return None
-
-
-# ============================================================
 # PUBLICAR SIGUIENTE CONTENIDO
 # ============================================================
 
@@ -1209,21 +1412,24 @@ def publish_next_content(
     # BUSCAR IMAGEN
     # --------------------------------------------------------
 
-    image_url = get_first_valid_image(
+    image_url = get_image_for_section(
+        queue,
         item
     )
 
     if image_url:
         print()
         print(
-            "Imagen encontrada:"
+            "Imagen que se utilizará:"
         )
         print(image_url)
 
     else:
-        print()
-        print(
-            "No se encontró una imagen válida."
+        # No permitimos publicar un tweet sin imagen.
+        raise RuntimeError(
+            "No se encontró ninguna imagen válida "
+            "para esta sección ni para el patch. "
+            "El post X NO será publicado."
         )
 
     # --------------------------------------------------------
@@ -1259,6 +1465,7 @@ def publish_next_content(
     item["post_id"] = post_id
     item["generated_text"] = generated_text
     item["generated_at"] = now_iso()
+    item["published_image_url"] = image_url
 
     save_json(
         QUEUE_FILE,
