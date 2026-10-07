@@ -4,19 +4,39 @@ Tu tarea: convertir UNA sección de un devblog de Rust en UN solo post.
 
 IDEA PRINCIPAL
 
-- Elegí UNA sola idea de la sección y descartá completamente las demás.
-- El lector debe poder responder "¿de qué trata este post?" con UNA sola respuesta.
-- El post NO puede hablar de dos mecánicas, cambios o novedades diferentes.
-- No resumas toda la sección.
-- Buscá el ángulo que tenga más potencial para generar una reacción de un jugador de Rust.
+- Elegí UNA sola idea de la sección.
+- Dentro de esa idea, elegí UN solo ángulo que haga que el jugador tenga ganas de reaccionar.
+- No resumas la sección.
+- No intentes incluir todas las novedades de la sección.
+- El post debe desarrollar una sola idea desde un único ángulo.
 
-PRIORIZÁ, EN ESTE ORDEN:
+PENSÁ EN DOS PASOS:
 
-1. Cambios que modifiquen la forma de jugar.
-2. Cambios que afecten algo que muchos jugadores usan.
-3. Cambios que puedan dividir opiniones.
-4. Números o datos llamativos.
-5. Mecánicas curiosas o inesperadas.
+1. ¿Cuál es la idea más interesante de la sección?
+2. ¿Cuál es el ángulo más interesante para contar esa idea?
+
+Ejemplo:
+
+CONTENIDO:
+Las vacas y ovejas producen carne, cuero, dung, leche y lana. Tienen genética. También pueden venderse en el ranch. Los NPC ahora pueden atravesar ciertas puertas gracias al nuevo navmesh.
+
+MAL:
+"Las vacas y ovejas dan carne, cuero, dung, leche y lana, tienen genética y además los NPC pueden entrar a bases."
+
+Problema: mezcla demasiadas ideas.
+
+MEJOR:
+"Las vacas y ovejas ahora pueden venderse en el ranch a un NPC."
+
+Ángulo:
+"El ganado como negocio."
+
+POST:
+"Ahora las vacas y ovejas también son negocio: podés venderlas en el ranch a un NPC. ¿Granjero de base o vamos a terminar robando ganado por el mapa?"
+
+La idea es el ganado.
+El ángulo es convertirlo en una actividad económica.
+El resto de las características se descarta.
 
 REGLA DE FOCO
 
@@ -24,36 +44,52 @@ Antes de escribir, identificá internamente las distintas ideas o novedades pres
 
 Elegí SOLO UNA.
 
-Una vez elegida, IGNORÁ COMPLETAMENTE las demás.
+Después identificá internamente cuál es el ángulo más interesante para contar esa idea.
 
-El resto de las ideas NO deben aparecer ni siquiera como contexto secundario.
+Elegí SOLO UNO.
 
-Ejemplo:
+Una vez elegidos, IGNORÁ COMPLETAMENTE las demás ideas y ángulos.
 
-Si CONTENIDO habla de animales, genética y navmesh:
+El resto NO debe aparecer ni siquiera como contexto secundario.
 
-- Podés elegir genética.
-- Podés elegir animales.
-- Podés elegir navmesh.
-- NO podés hablar de genética + animales + navmesh en el mismo post.
+El lector debe poder responder:
 
-Si una idea por sí sola no alcanza para generar un buen post, elegí otra idea de la misma sección que tenga mayor potencial.
+"¿De qué trata este post?"
+
+con UNA sola respuesta.
 
 Si para explicar el post necesitás mencionar dos cambios distintos, el post está mal enfocado y debés reescribirlo.
+
+PRIORIZÁ LOS ÁNGULOS QUE:
+
+1. Cambien la forma de jugar.
+2. Generen una decisión o dilema para el jugador.
+3. Beneficien a un tipo de jugador y perjudiquen a otro.
+4. Creen una nueva actividad, estrategia o forma de conseguir recursos.
+5. Tengan potencial para generar debate.
+6. Tengan un número o dato llamativo.
+7. Sean inesperados o curiosos.
+
+IMPORTANTE:
+
+No confundas "cantidad de información" con "calidad del post".
+
+Una sección puede contener 5 novedades y el post puede hablar solamente de UNA.
 
 CÓMO GENERAR INTERACCIÓN
 
 - La primera frase es el gancho.
 - Tiene que funcionar sola antes del "ver más".
 - Arrancá directamente con el cambio, dato o tensión.
-- Incluí al menos UN dato concreto de la idea elegida cuando exista: número, porcentaje, nombre de arma, mecánica, objeto, límite, etc.
-- Lo específico es preferible a una explicación genérica.
-- Si la idea genera un debate real, podés mostrar las dos caras del cambio o tomar postura con naturalidad.
+- Siempre que exista un dato concreto importante, usalo.
+- No enumeres características solamente para demostrar todo lo que incluye la actualización.
+- Si una característica es secundaria para el ángulo elegido, descartala.
+- Si la idea genera un debate real, mostrale al lector dónde está el conflicto.
 - Si existe un conflicto claro entre tipos de jugadores (solos vs clanes, raiders vs defensores, roamers vs base builders, etc.), podés usarlo.
-- Si el cambio no genera un debate real, cerrá con una observación o dato interesante.
+- Si el cambio crea una nueva decisión para el jugador, podés convertir esa decisión en el cierre.
+- Si no genera un debate real, cerrá con una observación o dato interesante.
 - No fuerces una pregunta solamente para generar interacción.
 - Si hacés una pregunta, que sea fácil de responder.
-- No pidas likes, reposts, follows ni interacción explícitamente.
 
 ESTILO
 
@@ -77,6 +113,30 @@ EVITÁ ESTAS FÓRMULAS:
 "Una de las novedades más interesantes..."
 "¡Atención!"
 "Ojo con esto."
+
+NO ENUMERES
+
+Evitá construir el post como una lista de características.
+
+MAL:
+"Las vacas dan carne, cuero, dung, leche y lana y además tienen genética."
+
+BIEN:
+"Ahora podés buscar el god clone también en las vacas."
+
+MAL:
+"Las vacas dan leche, lana, carne y cuero y además se pueden vender."
+
+BIEN:
+"Ahora las vacas también son negocio: podés venderlas en el ranch."
+
+La pregunta no es:
+
+"¿Qué características tiene esta novedad?"
+
+La pregunta es:
+
+"¿Qué es lo más interesante que puedo decir sobre esta novedad para que un jugador de Rust quiera responder?"
 
 VARIEDAD
 
@@ -142,6 +202,7 @@ Valor social: {{SOCIAL_VALUE}}/10
 ÚLTIMOS POSTS PUBLICADOS
 
 Estos posts NO deben ser copiados ni reutilizados.
+
 Usalos solamente para evitar repetir arranques, estructuras y cierres.
 
 {{LAST_POSTS}}
