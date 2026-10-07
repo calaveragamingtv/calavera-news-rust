@@ -12,15 +12,20 @@ HEADERS = {
 
 
 def get_page(url):
-    response = requests.get(url, headers=HEADERS, timeout=30)
+    response = requests.get(
+        url,
+        headers=HEADERS,
+        timeout=30
+    )
+
     response.raise_for_status()
+
     return BeautifulSoup(response.text, "html.parser")
 
 
 def get_latest_news():
     soup = get_page(NEWS_URL)
 
-    # Por ahora buscamos los enlaces de noticias.
     links = []
 
     for link in soup.find_all("a", href=True):
@@ -33,7 +38,9 @@ def get_latest_news():
                 links.append(full_url)
 
     if not links:
-        raise RuntimeError("No se encontraron noticias en Facepunch.")
+        raise RuntimeError(
+            "No se encontraron noticias en Facepunch."
+        )
 
     return links[0]
 
@@ -48,12 +55,18 @@ def parse_news(url):
     }
 
     if soup.title:
-        result["title"] = soup.title.get_text(strip=True)
+        result["title"] = soup.title.get_text(
+            " ",
+            strip=True
+        )
 
-    # Mostrar los headings para descubrir
-    # cómo Facepunch estructura las secciones.
-    for heading in soup.find_all(["h1", "h2", "h3", "h4"]):
-        text = heading.get_text(" ", strip=True)
+    for heading in soup.find_all(
+        ["h1", "h2", "h3", "h4"]
+    ):
+        text = heading.get_text(
+            " ",
+            strip=True
+        )
 
         if text:
             result["sections"].append({
@@ -64,18 +77,28 @@ def parse_news(url):
 
 
 def main():
-    print("Buscando última noticia de Rust...")
+    print("================================")
+    print("       RUST NEWS BOT")
+    print("================================")
+
+    print("\nBuscando última noticia...")
 
     latest_url = get_latest_news()
 
-    print(f"Última noticia encontrada:")
-    print(latest_url)
+    print(f"URL: {latest_url}")
 
     print("\nAnalizando noticia...")
 
     news = parse_news(latest_url)
 
-    print(json.dumps(news, indent=2, ensure_ascii=False))
+    print("\nResultado:")
+    print(
+        json.dumps(
+            news,
+            indent=2,
+            ensure_ascii=False
+        )
+    )
 
 
 if __name__ == "__main__":
