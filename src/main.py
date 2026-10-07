@@ -1,5 +1,7 @@
 import json
 import os
+import time
+
 import requests
 
 from bs4 import BeautifulSoup
@@ -237,12 +239,34 @@ Rules:
 - Do not invent information that is not present in the section.
 """
 
-    response = client.models.generate_content(
-        model="gemini-3.8-flash",
-        contents=prompt
-    )
+    for attempt in range(3):
 
-    return response.text
+        try:
+
+            response = client.models.generate_content(
+                model="gemini-3.8-flash",
+                contents=prompt
+            )
+
+            return response.text
+
+        except Exception as error:
+
+            print(
+                f"Gemini intento {attempt + 1}/3 falló: {error}"
+            )
+
+            if attempt < 2:
+
+                print(
+                    "Esperando 10 segundos antes de reintentar..."
+                )
+
+                time.sleep(10)
+
+            else:
+
+                raise
 
 
 def main():
@@ -255,7 +279,9 @@ def main():
 
     latest_url = get_latest_news()
 
-    print(f"URL: {latest_url}")
+    print(
+        f"URL: {latest_url}"
+    )
 
     print("\nAnalizando noticia...")
 
