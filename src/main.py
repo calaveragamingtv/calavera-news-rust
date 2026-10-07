@@ -3,6 +3,7 @@ import json
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+from google import genai
 
 BASE_URL = "https://rust.facepunch.com"
 NEWS_URL = f"{BASE_URL}/news/"
@@ -10,6 +11,25 @@ NEWS_URL = f"{BASE_URL}/news/"
 HEADERS = {
     "User-Agent": "RustNewsBot/1.0"
 }
+
+def test_gemini():
+
+    api_key = os.environ.get("GEMINI_API_KEY")
+
+    if not api_key:
+        raise RuntimeError("No se encontró GEMINI_API_KEY.")
+
+    client = genai.Client(api_key=api_key)
+
+    response = client.models.generate_content(
+        model="gemini-3.8-flash",
+        contents="Respondé solamente: Gemini conectado correctamente."
+    )
+
+    print("\n==============================")
+    print("        GEMINI TEST")
+    print("==============================")
+    print(response.text)
 
 
 def get_page(url):
@@ -194,6 +214,8 @@ def main():
         indent=2,
         ensure_ascii=False
     ))
+    
+    test_gemini()
 
 
 if __name__ == "__main__":
