@@ -105,7 +105,6 @@ def get_gemini_client():
 def extract_json_from_response(text):
     text = text.strip()
 
-    # Quitar markdown ```json ... ```
     if text.startswith("```"):
         text = re.sub(
             r"^```(?:json)?\s*",
@@ -120,7 +119,6 @@ def extract_json_from_response(text):
             text
         )
 
-    # Buscar array JSON
     array_match = re.search(
         r"\[.*\]",
         text,
@@ -132,7 +130,6 @@ def extract_json_from_response(text):
             array_match.group(0)
         )
 
-    # Buscar objeto JSON
     object_match = re.search(
         r"\{.*\}",
         text,
@@ -571,7 +568,6 @@ def create_content_queue(
             }
         )
 
-    # Ordenar por score
     selected_items.sort(
         key=lambda item: (
             item["publication_score"],
@@ -582,7 +578,6 @@ def create_content_queue(
         reverse=True
     )
 
-    # Asignar prioridad
     for index, item in enumerate(
         selected_items,
         start=1
@@ -635,7 +630,6 @@ def migrate_queue_if_needed():
     if not queue:
         return None
 
-    # Si ya tiene la estructura nueva
     if (
         isinstance(queue, dict)
         and "article" in queue
@@ -651,7 +645,6 @@ def migrate_queue_if_needed():
         "Migrando content_queue.json..."
     )
 
-    # Intentamos migrar la estructura anterior
     old_items = []
 
     if isinstance(queue, list):
@@ -827,10 +820,66 @@ def get_next_pending_item(queue):
 
 
 # ============================================================
+# ÚLTIMOS POSTS PUBLICADOS
+# ============================================================
+
+def get_last_published_posts(
+    queue,
+    limit=5
+):
+    published = [
+        item
+        for item in queue.get(
+            "items",
+            []
+        )
+        if item.get(
+            "published",
+            False
+        )
+        and item.get(
+            "generated_text"
+        )
+    ]
+
+    published.sort(
+        key=lambda item: item.get(
+            "published_at",
+            ""
+        ),
+        reverse=True
+    )
+
+    posts = []
+
+    for item in published[:limit]:
+        posts.append(
+            item["generated_text"]
+        )
+
+    if not posts:
+        return (
+            "No hay posts publicados "
+            "anteriormente."
+        )
+
+    return "\n".join(
+        f"{index}. {post}"
+        for index, post in enumerate(
+            posts,
+            start=1
+        )
+    )
+
+
+# ============================================================
 # GENERAR POST PARA X
 # ============================================================
 
-def generate_x_post(item):
+def generate_x_post(
+    queue,
+    item
+):
     if not os.path.exists(
         GENERATE_X_PROMPT_FILE
     ):
@@ -844,6 +893,10 @@ def generate_x_post(item):
         encoding="utf-8"
     ) as f:
         prompt = f.read()
+
+    last_posts = get_last_published_posts(
+        queue
+    )
 
     replacements = {
         "{{ARTICLE_TITLE}}":
@@ -907,6 +960,9 @@ def generate_x_post(item):
                     0
                 )
             ),
+
+        "{{LAST_POSTS}}":
+            last_posts,
 
         "{{CONTENT}}":
             item.get(
@@ -1112,6 +1168,7 @@ def publish_next_content(queue):
     )
 
     generated_text = generate_x_post(
+        queue,
         item
     )
 
@@ -1119,12 +1176,15 @@ def publish_next_content(queue):
     print(
         "POST GENERADO"
     )
+
     print(
         "----------------------------------------"
     )
+
     print(
         generated_text
     )
+
     print(
         "----------------------------------------"
     )
@@ -1137,25 +1197,16 @@ def publish_next_content(queue):
     print(
         "⚠️ MODO PRUEBA"
     )
+
     print(
         "El post NO será enviado a Buffer."
     )
+
     print(
         "El contenido NO será marcado como publicado."
     )
-    print()
 
-    # IMPORTANTE:
-    #
-    # No hacemos:
-    #
-    # send_to_buffer(...)
-    #
-    # ni:
-    #
-    # item["published"] = True
-    #
-    # hasta validar el texto generado.
+    print()
 
 
 # ============================================================
@@ -1234,13 +1285,11 @@ def main():
             article
         )
 
-        # Guardar análisis
         save_json(
             NEWS_ANALYSIS_FILE,
             analysis
         )
 
-        # Crear nueva cola
         queue = create_content_queue(
             article,
             analysis
@@ -1251,7 +1300,6 @@ def main():
             queue
         )
 
-        # Guardar latest_news
         save_json(
             LATEST_NEWS_FILE,
             article
