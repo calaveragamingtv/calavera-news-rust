@@ -65,13 +65,14 @@
       "publication_type": "standalone",
       "content_type": "news",
       "reason": "La incorporación de vacas y ovejas con genética y mecánicas de granja es la feature principal del parche y genera muchísimo interés y debate en la comunidad.",
-      "published": false,
-      "published_at": null,
-      "platform": null,
-      "post_id": null,
-      "generated_text": null,
-      "generated_at": null,
-      "priority": 1
+      "published": true,
+      "published_at": "2026-10-08T17:01:48.112829+00:00",
+      "platform": "x",
+      "post_id": "6ac7cc79316905333b9d815f",
+      "generated_text": "Ahora las vacas y ovejas también tienen genética y podés buscar el god clone. ¿Granjas optimizadas o volvemos a cruzar animales como locos?",
+      "generated_at": "2026-10-08T17:01:48.112848+00:00",
+      "priority": 1,
+      "published_image_url": "https://files.facepunch.com/kaantasan/1b3011b1/oct2026_livestock_animals_cows_sheep_2_1080%20%281%29.jpg"
     },
     {
       "article_url": "https://rust.facepunch.com/news/livestock",
