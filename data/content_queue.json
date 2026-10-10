@@ -122,13 +122,14 @@
       "publication_type": "standalone",
       "content_type": "debate",
       "reason": "Modifica drásticamente el meta del inicio del wipe para conseguir minihelicópteros en Bandit Camp, obligando a una inversión comunitaria y generando mucha discusión.",
-      "published": false,
-      "published_at": null,
-      "platform": null,
-      "post_id": null,
-      "generated_text": null,
-      "generated_at": null,
-      "priority": 3
+      "published": true,
+      "published_at": "2026-10-10T17:01:16.792856+00:00",
+      "platform": "x",
+      "post_id": "6aca6f5ac4de2d2b123407b9",
+      "generated_text": "El helipad de Bandit Camp arranca roto este wipe y hay que arreglar a martillazos para poder comprar minicopters. ¿Lo repara tu clan para volar temprano o le dejan el gasto a los demás?",
+      "generated_at": "2026-10-10T17:01:16.792874+00:00",
+      "priority": 3,
+      "published_image_url": "https://files.facepunch.com/martynchapman/2026/September/30_13-24-FondNeonrainbowfish.jpg"
     },
     {
       "article_url": "https://rust.facepunch.com/news/livestock",
