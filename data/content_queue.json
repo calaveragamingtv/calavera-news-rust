@@ -150,13 +150,14 @@
       "publication_type": "standalone",
       "content_type": "news",
       "reason": "La expansión de las salas de loot que requieren Heavy Fuses en una enorme cantidad de monumentos cambia por completo las rutas de loot y el meta de los monumentos.",
-      "published": false,
-      "published_at": null,
-      "platform": null,
-      "post_id": null,
-      "generated_text": null,
-      "generated_at": null,
-      "priority": 4
+      "published": true,
+      "published_at": "2026-10-11T17:01:18.676518+00:00",
+      "platform": "x",
+      "post_id": "6acbc0dcfa026cfb810b6a30",
+      "generated_text": "Llenar de Heavy Fuses la sala de energía para abrir los nuevos loot rooms en Launch Site y Military Tunnels va a ser una masacre. Ya veo a más de uno campeando la puerta.",
+      "generated_at": "2026-10-11T17:01:18.676541+00:00",
+      "priority": 4,
+      "published_image_url": "https://files.facepunch.com/kaantasan/1b3011b1/rust_lootroom_4_1080.jpg"
     },
     {
       "article_url": "https://rust.facepunch.com/news/livestock",
