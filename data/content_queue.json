@@ -179,13 +179,17 @@
       "publication_type": "standalone",
       "content_type": "news",
       "reason": "La predicción de cliente para explosivos y granadas mejora notablemente la fluidez en PvP, especialmente para jugadores con alto ping, siendo un cambio técnico muy celebrado.",
-      "published": false,
-      "published_at": null,
-      "platform": null,
-      "post_id": null,
-      "generated_text": null,
-      "generated_at": null,
-      "priority": 1
+      "published": true,
+      "published_at": "2026-10-12T21:43:15.688475+00:00",
+      "platform": "x",
+      "post_id": "6acd546b3d6121df402f3cdf",
+      "generated_text": "Se terminaron las balas perdidas por el ping al tirar un C4. Con la predicción de cliente en explosivos, los que jugamos con lag finalmente vamos a poder defendernos en medio de un PvP.",
+      "generated_at": "2026-10-12T21:43:15.688494+00:00",
+      "priority": 1,
+      "published_media": {
+        "type": "video",
+        "url": "https://files.facepunch.com/kaantasan/1b3011b1/rust_grenade_throw_comparison.mp4"
+      }
     }
   ]
 }
