@@ -20,7 +20,12 @@ class TwitterPublisher:
         self.api_key = api_key
         self.channel_id = channel_id
 
-    def publish(self, text, image_url=None):
+    def publish(
+        self,
+        text,
+        media_type=None,
+        media_url=None
+    ):
         mutation = """
         mutation CreatePost($input: CreatePostInput!) {
           createPost(input: $input) {
@@ -49,14 +54,30 @@ class TwitterPublisher:
             "schedulingType": "automatic"
         }
 
-        if image_url:
-            input_data["assets"] = [
-                {
-                    "image": {
-                        "url": image_url
+        if media_url:
+            if media_type == "image":
+                input_data["assets"] = [
+                    {
+                        "image": {
+                            "url": media_url
+                        }
                     }
-                }
-            ]
+                ]
+
+            elif media_type == "video":
+                input_data["assets"] = [
+                    {
+                        "video": {
+                            "url": media_url
+                        }
+                    }
+                ]
+
+            else:
+                raise RuntimeError(
+                    f"Tipo de media no soportado: "
+                    f"{media_type}"
+                )
 
         response = requests.post(
             self.BUFFER_URL,
