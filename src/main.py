@@ -1071,6 +1071,7 @@ def process_general_announcement(
         # El anuncio general también lleva imagen.
         post = x_publisher.publish(
             publication["x_text"],
+            media_type="image",
             image_url=general_image_url
         )
 
@@ -1373,6 +1374,7 @@ def publish_next_content(
 
     post = x_publisher.publish(
         generated_text,
+        media_type="image",
         image_url=image_url
     )
 
