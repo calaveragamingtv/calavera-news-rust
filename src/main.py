@@ -7,6 +7,7 @@ from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
 from google import genai
+from twitter import TwitterPublisher
 
 
 BASE_URL = "https://rust.facepunch.com"
@@ -29,6 +30,12 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 BUFFER_API_KEY = os.getenv("BUFFER_API_KEY")
 BUFFER_CHANNEL_ID = os.getenv("BUFFER_CHANNEL_ID")
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
+
+
+x_publisher = TwitterPublisher(
+    api_key=BUFFER_API_KEY,
+    channel_id=BUFFER_CHANNEL_ID
+)
 
 
 # ============================================================
@@ -766,128 +773,6 @@ Contenido:
 
 
 # ============================================================
-# BUFFER
-# ============================================================
-
-def buffer_create_post(
-    text,
-    image_url=None
-):
-    if not BUFFER_API_KEY:
-        raise RuntimeError(
-            "Falta BUFFER_API_KEY"
-        )
-
-    if not BUFFER_CHANNEL_ID:
-        raise RuntimeError(
-            "Falta BUFFER_CHANNEL_ID"
-        )
-
-    mutation = """
-    mutation CreatePost($input: CreatePostInput!) {
-      createPost(input: $input) {
-        ... on PostActionSuccess {
-          post {
-            id
-            text
-            assets {
-              id
-              mimeType
-            }
-          }
-        }
-
-        ... on MutationError {
-          message
-        }
-      }
-    }
-    """
-
-    input_data = {
-        "text": text,
-        "channelId": BUFFER_CHANNEL_ID,
-
-        # Publicar inmediatamente
-        "mode": "shareNow",
-
-        # Buffer maneja automáticamente
-        # la publicación
-        "schedulingType": "automatic"
-    }
-
-    if image_url:
-        input_data["assets"] = [
-            {
-                "image": {
-                    "url": image_url
-                }
-            }
-        ]
-
-    response = requests.post(
-        "https://api.buffer.com",
-        headers={
-            "Authorization": (
-                f"Bearer {BUFFER_API_KEY}"
-            ),
-            "Content-Type": "application/json"
-        },
-        json={
-            "query": mutation,
-            "variables": {
-                "input": input_data
-            }
-        },
-        timeout=30
-    )
-
-    response.raise_for_status()
-
-    data = response.json()
-
-    if data.get("errors"):
-        raise RuntimeError(
-            f"Buffer GraphQL error: "
-            f"{data['errors']}"
-        )
-
-    create_post = (
-        data
-        .get("data", {})
-        .get("createPost")
-    )
-
-    if not create_post:
-        raise RuntimeError(
-            f"Buffer no devolvió createPost: "
-            f"{data}"
-        )
-
-    post = create_post.get(
-        "post"
-    )
-
-    if post:
-        return post
-
-    message = create_post.get(
-        "message"
-    )
-
-    if message:
-        raise RuntimeError(
-            f"Buffer rechazó el post: "
-            f"{message}"
-        )
-
-    raise RuntimeError(
-        f"Respuesta inesperada de Buffer: "
-        f"{data}"
-    )
-
-
-# ============================================================
 # IMAGEN
 # ============================================================
 
@@ -1184,7 +1069,7 @@ def process_general_announcement(
 
         # IMPORTANTE:
         # El anuncio general también lleva imagen.
-        post = buffer_create_post(
+        post = x_publisher.publish(
             publication["x_text"],
             image_url=general_image_url
         )
@@ -1486,7 +1371,7 @@ def publish_next_content(
         "Publicando mediante Buffer..."
     )
 
-    post = buffer_create_post(
+    post = x_publisher.publish(
         generated_text,
         image_url=image_url
     )
