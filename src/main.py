@@ -2,10 +2,10 @@ import json
 import os
 import re
 from datetime import datetime, timezone
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
+from bs4 import BeautifulSoup
 
 import requests
-from bs4 import BeautifulSoup
 from google import genai
 from twitter import TwitterPublisher
 
@@ -181,46 +181,31 @@ def get_latest_news():
     )
 
 
+
 def scrape_article(url):
-    print(
-        f"Scrapeando artículo: {url}"
-    )
+    print(f"Scrapeando artículo: {url}")
 
-    response = requests.get(
-        url,
-        timeout=30
-    )
-
+    response = requests.get(url, timeout=30)
     response.raise_for_status()
 
     html = response.text
-
-    soup = BeautifulSoup(
-        html,
-        "html.parser"
-    )
+    soup = BeautifulSoup(html, "html.parser")
 
     # --------------------------------------------------------
     # METADATA
     # --------------------------------------------------------
 
     html_title = (
-        soup.title.get_text(
-            " ",
-            strip=True
-        )
+        soup.title.get_text(" ", strip=True)
         if soup.title
         else ""
     )
 
     article_title = html_title
 
-    if article_title.endswith(
-        " - News - Rust"
-    ):
-        article_title = article_title[
-            :-len(" - News - Rust")
-        ].strip()
+    suffix = " - News - Rust"
+    if article_title.endswith(suffix):
+        article_title = article_title[:-len(suffix)].strip()
 
     date_patterns = [
         r"\b\d{1,2}\s+[A-Za-z]+\s+\d{4}\b",
@@ -231,11 +216,7 @@ def scrape_article(url):
     article_date = None
 
     for pattern in date_patterns:
-        match = re.search(
-            pattern,
-            html
-        )
-
+        match = re.search(pattern, html)
         if match:
             article_date = match.group(0)
             break
@@ -243,133 +224,151 @@ def scrape_article(url):
     article_type = "DEVBLOG"
 
     # --------------------------------------------------------
+    # EXTRACCION DE IMAGENES Y VIDEOS
+    # --------------------------------------------------------
+
+    video_extensions = (
+        ".mp4",
+        ".webm",
+        ".mov",
+        ".m4v",
+        ".ogv",
+        ".avi"
+    )
+
+    def extract_media(container):
+        images = []
+        videos = []
+
+        # Imágenes
+        for img in container.select("img"):
+            src = (
+                img.get("src")
+                or img.get("data-src")
+                or img.get("data-original")
+            )
+
+            if not src:
+                continue
+
+            image_url = urljoin(url, src)
+
+            if image_url not in images:
+                images.append(image_url)
+
+        # Videos embebidos
+        for video in container.select("video"):
+            sources = []
+
+            if video.get("src"):
+                sources.append(video.get("src"))
+
+            for source in video.select("source"):
+                src = source.get("src")
+                if src:
+                    sources.append(src)
+
+            for src in sources:
+                video_url = urljoin(url, src)
+
+                if video_url not in videos:
+                    videos.append(video_url)
+
+        # Enlaces directos a archivos de video
+        for link in container.select("a[href]"):
+            href = link.get("href", "").strip()
+            path = urlparse(href).path.lower()
+
+            if path.endswith(video_extensions):
+                video_url = urljoin(url, href)
+
+                if video_url not in videos:
+                    videos.append(video_url)
+
+        return images, videos
+
+    # --------------------------------------------------------
     # SECCIONES
     # --------------------------------------------------------
 
     sections = []
 
-    blocks = soup.select(
-        ".news-section-block"
-    )
+    blocks = soup.select(".news-section-block")
 
     for block in blocks:
-        header = block.select_one(
-            ".section-header"
-        )
+        header = block.select_one(".section-header")
 
         if not header:
             continue
 
-        title_element = header.select_one(
-            ".title"
-        )
-
-        author_element = header.select_one(
-            ".author"
-        )
+        title_element = header.select_one(".title")
+        author_element = header.select_one(".author")
 
         title = (
-            title_element.get_text(
-                " ",
-                strip=True
-            )
+            title_element.get_text(" ", strip=True)
             if title_element
             else ""
         )
 
         author = (
-            author_element.get_text(
-                " ",
-                strip=True
-            )
+            author_element.get_text(" ", strip=True)
             if author_element
             else ""
         )
 
-        if not title:
+        if not title or title.strip() == "⠀":
             continue
 
-        if title.strip() == "⠀":
-            continue
-
-        content_element = block.select_one(
-            ".content"
-        )
+        content_element = block.select_one(".content")
 
         if not content_element:
             continue
 
-        content = content_element.get_text(
-            "\n",
-            strip=True
-        )
+        content = content_element.get_text("\n", strip=True)
 
-        images = []
-
-        for img in content_element.select(
-            "img"
-        ):
-            src = img.get("src")
-
-            if not src:
-                continue
-
-            image_url = urljoin(
-                BASE_URL,
-                src
-            )
-
-            if image_url not in images:
-                images.append(image_url)
+        images, videos = extract_media(content_element)
 
         sections.append({
             "title": title,
             "author": author,
             "content": content,
-            "images": images
+            "images": images,
+            "videos": videos
         })
 
-    print()
-    print("DEBUG metadata:")
-    print(
-        f"HTML title: {html_title}"
-    )
-    print(
-        "h1: NO ENCONTRADO"
-    )
-    print(
-        f"Fecha detectada: {article_date}"
-    )
-    print(
-        f"Tipo detectado: {article_type}"
-    )
-    print(
-        f"Secciones encontradas: {len(sections)}"
-    )
-    print(
-        f"Título detectado: {article_title}"
-    )
-
     # --------------------------------------------------------
-    # IMAGENES GENERALES DEL PATCH
+    # IMAGENES Y VIDEOS GENERALES DEL PATCH
     # --------------------------------------------------------
 
     article_images = []
+    article_videos = []
 
     for section in sections:
-        for image_url in section.get(
-            "images",
-            []
-        ):
+        for image_url in section.get("images", []):
             if image_url not in article_images:
-                article_images.append(
-                    image_url
-                )
+                article_images.append(image_url)
 
-    print(
-        f"Imágenes generales encontradas: "
-        f"{len(article_images)}"
-    )
+        for video_url in section.get("videos", []):
+            if video_url not in article_videos:
+                article_videos.append(video_url)
+
+    print()
+    print("DEBUG metadata:")
+    print(f"HTML title: {html_title}")
+    print("h1: NO ENCONTRADO")
+    print(f"Fecha detectada: {article_date}")
+    print(f"Tipo detectado: {article_type}")
+    print(f"Secciones encontradas: {len(sections)}")
+    print(f"Título detectado: {article_title}")
+    print(f"Imágenes generales encontradas: {len(article_images)}")
+    print(f"Videos generales encontrados: {len(article_videos)}")
+
+    for section in sections:
+        print(
+            f"Sección '{section['title']}': "
+            f"{len(section['images'])} imágenes, "
+            f"{len(section['videos'])} videos"
+        )
 
     return {
         "url": url,
@@ -377,7 +376,8 @@ def scrape_article(url):
         "date": article_date,
         "type": article_type,
         "sections": sections,
-        "images": article_images
+        "images": article_images,
+        "videos": article_videos
     }
 
 
