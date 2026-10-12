@@ -813,6 +813,39 @@ def is_valid_image(
 
     return False
 
+def is_valid_video(video_url):
+    try:
+        response = requests.get(
+            video_url,
+            headers={"Range": "bytes=0-1023"},
+            timeout=15,
+            stream=True
+        )
+
+        content_type = response.headers.get(
+            "Content-Type", ""
+        ).lower()
+
+        valid = (
+            response.status_code in (200, 206)
+            and (
+                content_type.startswith("video/")
+                or any(
+                    ext in video_url.lower().split("?")[0]
+                    for ext in (
+                        ".mp4", ".webm", ".mov",
+                        ".m4v", ".ogv", ".avi"
+                    )
+                )
+            )
+        )
+
+        response.close()
+        return valid
+
+    except requests.RequestException:
+        return False
+
 
 def get_first_valid_image(
     item
@@ -830,82 +863,48 @@ def get_first_valid_image(
     return None
 
 
-def get_first_patch_image(
-    queue
-):
-    article = queue.get(
-        "article",
-        {}
-    )
+def get_first_patch_media(queue):
+    article = queue.get("article", {})
 
-    # --------------------------------------------------------
-    # PRIMERO: imágenes generales guardadas en article
-    # --------------------------------------------------------
+    # 1. Imagen general del patch
+    for image_url in article.get("images") or []:
+        if is_valid_image(image_url):
+            return "image", image_url
 
-    article_images = article.get(
-        "images"
-    ) or []
+    # 2. Video general del patch
+    for video_url in article.get("videos") or []:
+        if is_valid_video(video_url):
+            return "video", video_url
 
-    for image_url in article_images:
-        if is_valid_image(
-            image_url
-        ):
-            return image_url
+    # 3. Fallback para colas antiguas
+    for item in queue.get("items", []):
+        for image_url in item.get("images") or []:
+            if is_valid_image(image_url):
+                return "image", image_url
 
-    # --------------------------------------------------------
-    # FALLBACK PARA COLAS ANTIGUAS
-    # Busca imágenes dentro de las secciones.
-    # --------------------------------------------------------
+        for video_url in item.get("videos") or []:
+            if is_valid_video(video_url):
+                return "video", video_url
 
-    for item in queue.get(
-        "items",
-        []
-    ):
-        images = item.get(
-            "images"
-        ) or []
-
-        for image_url in images:
-            if is_valid_image(
-                image_url
-            ):
-                return image_url
-
-    return None
+    return None, None
 
 
-def get_image_for_section(
-    queue,
-    item
-):
-    # --------------------------------------------------------
+def get_media_for_section(queue, item):
     # 1. Imagen propia de la sección
-    # --------------------------------------------------------
+    for image_url in item.get("images") or []:
+        if is_valid_image(image_url):
+            return "image", image_url
 
-    image_url = get_first_valid_image(
-        item
-    )
+    # 2. Video propio de la sección
+    for video_url in item.get("videos") or []:
+        if is_valid_video(video_url):
+            return "video", video_url
 
-    if image_url:
-        return image_url
+    # 3. Fallback al medio general del patch
+    print("La sección no tiene imágenes ni videos válidos.")
+    print("Buscando medio válido del patch como fallback...")
 
-    # --------------------------------------------------------
-    # 2. Fallback: primera imagen del patch
-    # --------------------------------------------------------
-
-    print()
-    print(
-        "La sección no tiene una imagen válida."
-    )
-
-    print(
-        "Buscando primera imagen válida "
-        "del patch como fallback..."
-    )
-
-    return get_first_patch_image(
-        queue
-    )
+    return get_first_patch_media(queue)
 
 
 # ============================================================
@@ -964,185 +963,95 @@ def publish_discord(
 # PROCESAR ANUNCIO GENERAL
 # ============================================================
 
-def process_general_announcement(
-    queue
-):
+
+def process_general_announcement(queue):
     publication = queue.setdefault(
         "general_publication",
         {
             "generated": False,
             "x_text": None,
             "discord_text": None,
-
             "x_posted": False,
             "x_posted_at": None,
             "x_post_id": None,
-
             "discord_posted": False,
             "discord_posted_at": None,
-
             "generated_at": None
         }
     )
 
-    # --------------------------------------------------------
     # GENERAR UNA SOLA VEZ
-    # --------------------------------------------------------
+    if not publication.get("generated"):
+        result = generate_general_announcement(queue)
 
-    if not publication.get(
-        "generated"
-    ):
-        result = generate_general_announcement(
-            queue
-        )
-
-        publication["x_text"] = result[
-            "x_text"
-        ]
-
-        publication["discord_text"] = result[
-            "discord_text"
-        ]
-
+        publication["x_text"] = result["x_text"]
+        publication["discord_text"] = result["discord_text"]
         publication["generated"] = True
         publication["generated_at"] = now_iso()
 
-        save_json(
-            QUEUE_FILE,
-            queue
-        )
+        save_json(QUEUE_FILE, queue)
 
-        print()
-        print(
-            "ANUNCIO GENERAL - X"
-        )
-        print()
-        print(
-            publication["x_text"]
-        )
+        print("\nANUNCIO GENERAL - X\n")
+        print(publication["x_text"])
 
-        print()
-        print(
-            "ANUNCIO GENERAL - DISCORD"
-        )
-        print()
-        print(
-            publication["discord_text"]
-        )
+        print("\nANUNCIO GENERAL - DISCORD\n")
+        print(publication["discord_text"])
 
-    # --------------------------------------------------------
-    # BUSCAR IMAGEN DEL PATCH
-    # --------------------------------------------------------
+    # SELECCIONAR MEDIO PARA X
+    media_type, media_url = get_first_patch_media(queue)
 
-    general_image_url = get_first_patch_image(
-        queue
-    )
-
-    if general_image_url:
-        print()
-        print(
-            "Imagen general del patch encontrada:"
-        )
-        print(
-            general_image_url
-        )
-
+    if media_url:
+        print(f"Medio general para X: {media_type} - {media_url}")
     else:
-        print()
-        print(
-            "ADVERTENCIA: no se encontró "
-            "ninguna imagen válida para el patch."
+        print("ERROR: no se encontró ninguna imagen o video válido.")
+        raise RuntimeError(
+            "No se puede publicar el anuncio general en X sin medios válidos."
         )
 
-    # --------------------------------------------------------
     # PUBLICAR X
-    # --------------------------------------------------------
+    if not publication.get("x_posted"):
+        print("\nPublicando anuncio general en X mediante Buffer...")
 
-    if not publication.get(
-        "x_posted"
-    ):
-        print()
-        print(
-            "Publicando anuncio general "
-            "en X mediante Buffer..."
-        )
-
-        # IMPORTANTE:
-        # El anuncio general también lleva imagen.
         post = x_publisher.publish(
             publication["x_text"],
-            media_type="image",
-            image_url=general_image_url
+            media_type=media_type,
+            media_url=media_url
         )
 
         publication["x_posted"] = True
         publication["x_posted_at"] = now_iso()
-        publication["x_post_id"] = post.get(
-            "id"
-        )
+        publication["x_post_id"] = post.get("id")
 
-        save_json(
-            QUEUE_FILE,
-            queue
-        )
+        save_json(QUEUE_FILE, queue)
 
-        print(
-            "Anuncio general publicado "
-            f"en X. ID: {post.get('id')}"
-        )
+        print(f"Anuncio general publicado en X. ID: {post.get('id')}")
 
-    # --------------------------------------------------------
-    # PUBLICAR DISCORD
-    # --------------------------------------------------------
+    # DISCORD: sigue utilizando una imagen, si hay una disponible
+    if not publication.get("discord_posted"):
+        print("\nPublicando anuncio general en Discord...")
 
-    if not publication.get(
-        "discord_posted"
-    ):
-        print()
-        print(
-            "Publicando anuncio general "
-            "en Discord..."
-        )
-
-        article = queue.get(
-            "article",
-            {}
-        )
+        discord_image_url = get_first_patch_image(queue)
+        article = queue.get("article", {})
 
         publish_discord(
             publication["discord_text"],
-            image_url=general_image_url,
-            article_url=article.get(
-                "url"
-            ),
-            article_title=article.get(
-                "title"
-            )
+            image_url=discord_image_url,
+            article_url=article.get("url"),
+            article_title=article.get("title")
         )
 
         publication["discord_posted"] = True
         publication["discord_posted_at"] = now_iso()
 
-        save_json(
-            QUEUE_FILE,
-            queue
-        )
+        save_json(QUEUE_FILE, queue)
 
-        print(
-            "Anuncio general publicado "
-            "en Discord con imagen y link."
-        )
+        print("Anuncio general publicado en Discord.")
 
     return (
-        publication.get(
-            "x_posted",
-            False
-        )
-        and publication.get(
-            "discord_posted",
-            False
-        )
+        publication.get("x_posted", False)
+        and publication.get("discord_posted", False)
     )
+
 
 
 # ============================================================
@@ -1276,139 +1185,77 @@ def generate_x_post(
 # PUBLICAR SIGUIENTE CONTENIDO
 # ============================================================
 
-def publish_next_content(
-    queue
-):
-    items = queue.get(
-        "items",
-        []
-    )
+
+def publish_next_content(queue):
+    items = queue.get("items", [])
 
     unpublished = [
-        item
-        for item in items
-        if not item.get(
-            "published",
-            False
-        )
+        item for item in items
+        if not item.get("published", False)
     ]
 
     if not unpublished:
-        print()
-        print(
-            "No quedan secciones pendientes "
-            "para publicar."
-        )
-
+        print("No quedan secciones pendientes para publicar.")
         return False
 
     unpublished.sort(
-        key=lambda item: item.get(
-            "priority",
-            999
-        )
+        key=lambda item: item.get("priority", 999)
     )
 
     item = unpublished[0]
 
-    print()
-    print(
-        "Próximo contenido:"
-    )
+    print("\nPróximo contenido:")
+    print(f"Título: {item['title']}")
+    print(f"Score: {item['publication_score']}")
+    print(f"Prioridad: {item['priority']}")
 
-    print(
-        f"Título: {item['title']}"
-    )
+    # GENERAR TEXTO
+    generated_text = generate_x_post(queue, item)
 
-    print(
-        f"Score: "
-        f"{item['publication_score']}"
-    )
+    # SELECCIONAR MEDIO
+    media_type, media_url = get_media_for_section(queue, item)
 
-    print(
-        f"Prioridad: "
-        f"{item['priority']}"
-    )
-
-    # --------------------------------------------------------
-    # GENERAR
-    # --------------------------------------------------------
-
-    generated_text = generate_x_post(
-        queue,
-        item
-    )
-
-    # --------------------------------------------------------
-    # BUSCAR IMAGEN
-    # --------------------------------------------------------
-
-    image_url = get_image_for_section(
-        queue,
-        item
-    )
-
-    if image_url:
-        print()
-        print(
-            "Imagen que se utilizará:"
-        )
-        print(image_url)
-
-    else:
-        # No permitimos publicar un tweet sin imagen.
+    if not media_url:
         raise RuntimeError(
-            "No se encontró ninguna imagen válida "
+            "No se encontró ninguna imagen o video válido "
             "para esta sección ni para el patch. "
-            "El post X NO será publicado."
+            "El post no será publicado."
         )
 
-    # --------------------------------------------------------
-    # PUBLICAR
-    # --------------------------------------------------------
+    print(f"Medio seleccionado: {media_type}")
+    print(media_url)
 
-    print()
-    print(
-        "Publicando mediante Buffer..."
-    )
+    # PUBLICAR
+    print("Publicando mediante Buffer...")
 
     post = x_publisher.publish(
         generated_text,
-        media_type="image",
-        image_url=image_url
+        media_type=media_type,
+        media_url=media_url
     )
 
-    post_id = post.get(
-        "id"
-    )
+    post_id = post.get("id")
 
-    print(
-        "Publicado correctamente "
-        f"en Buffer. ID: {post_id}"
-    )
+    print(f"Publicado correctamente. ID: {post_id}")
 
-    # --------------------------------------------------------
-    # MARCAR SOLO DESPUES DEL EXITO
-    # --------------------------------------------------------
-
+    # GUARDAR ESTADO SOLO DESPUÉS DEL ÉXITO
     item["published"] = True
     item["published_at"] = now_iso()
     item["platform"] = "x"
     item["post_id"] = post_id
     item["generated_text"] = generated_text
     item["generated_at"] = now_iso()
-    item["published_image_url"] = image_url
+    item["published_media"] = {
+        "type": media_type,
+        "url": media_url
+    }
 
-    save_json(
-        QUEUE_FILE,
-        queue
-    )
+    save_json(QUEUE_FILE, queue)
 
-    print(
-        "Estado guardado correctamente."
-    )
+    print("Estado guardado correctamente.")
 
     return True
+
 
 
 # ============================================================
