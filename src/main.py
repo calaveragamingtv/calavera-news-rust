@@ -388,7 +388,8 @@ def build_content_queue(
             "videos": article.get(
                 "videos",
                 []
-            )
+            ),
+            "cover_video": article.get("cover_video")
         },
 
         "general_publication": {
@@ -635,6 +636,17 @@ def get_first_patch_image(queue):
 
 def get_first_patch_media(queue):
     article = queue.get("article", {})
+
+    # El primer post del patch debe usar el video de portada si el scraper lo detectó.
+    cover_video = article.get("cover_video")
+    if cover_video and is_valid_video(cover_video):
+        return "video", cover_video
+
+    # Compatibilidad con colas anteriores: si el cover_video no estaba guardado,
+    # buscar un video de portada en la lista general antes de elegir una imagen.
+    for video_url in article.get("videos") or []:
+        if is_valid_video(video_url):
+            return "video", video_url
 
     # 1. Imagen general del patch
     for image_url in article.get("images") or []:
