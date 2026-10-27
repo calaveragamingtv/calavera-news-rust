@@ -1,4 +1,1092 @@
+import json
+import os
+import re
+from datetime import datetime, timezone
+
+import requests
+from google import genai
+from twitter import TwitterPublisher
+from scraper import get_latest_news, scrape_article
+
+GEMINI_MODEL = "gemini-3.5-flash-lite"
+
+DATA_DIR = "data"
+LATEST_NEWS_FILE = os.path.join(DATA_DIR, "latest_news.json")
+ANALYSIS_FILE = os.path.join(DATA_DIR, "news_analysis.json")
+QUEUE_FILE = os.path.join(DATA_DIR, "content_queue.json")
+
+ANALYZE_PROMPT_FILE = "prompt/analyze_devblog_sections.txt"
+X_POST_PROMPT_FILE = "prompt/generate_x_post.txt"
+GENERAL_ANNOUNCEMENT_PROMPT_FILE = (
+    "prompt/generate_general_announcement.txt"
 )
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+BUFFER_API_KEY = os.getenv("BUFFER_API_KEY")
+BUFFER_CHANNEL_ID = os.getenv("BUFFER_CHANNEL_ID")
+DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
+
+
+x_publisher = TwitterPublisher(
+    api_key=BUFFER_API_KEY,
+    channel_id=BUFFER_CHANNEL_ID
+)
+
+
+# ============================================================
+# UTILIDADES
+# ============================================================
+
+def now_iso():
+    return datetime.now(timezone.utc).isoformat()
+
+
+def ensure_data_dir():
+    os.makedirs(DATA_DIR, exist_ok=True)
+
+
+def load_json(path, default=None):
+    if not os.path.exists(path):
+        return default
+
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return default
+
+
+def save_json(path, data):
+    ensure_data_dir()
+
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(
+            data,
+            f,
+            ensure_ascii=False,
+            indent=2
+        )
+
+
+def read_prompt(path):
+    with open(path, "r", encoding="utf-8") as f:
+        return f.read()
+
+
+def extract_json(text):
+    text = text.strip()
+
+    if text.startswith("```"):
+        text = re.sub(
+            r"^```(?:json)?",
+            "",
+            text
+        )
+
+        text = re.sub(
+            r"```$",
+            "",
+            text
+        )
+
+        text = text.strip()
+
+    return json.loads(text)
+
+
+# ============================================================
+# GEMINI
+# ============================================================
+
+def get_gemini_client():
+    if not GEMINI_API_KEY:
+        raise RuntimeError(
+            "Falta GEMINI_API_KEY"
+        )
+
+    return genai.Client(
+        api_key=GEMINI_API_KEY
+    )
+
+
+def ask_gemini(prompt):
+    client = get_gemini_client()
+
+    response = client.models.generate_content(
+        model=GEMINI_MODEL,
+        contents=prompt,
+    )
+
+    if not response.text:
+        raise RuntimeError(
+            "Gemini devolvió una respuesta vacía"
+        )
+
+    return response.text.strip()
+
+
+# ============================================================
+# SCRAPER
+# ============================================================
+
+
+# ============================================================
+# ANALISIS DEL DEVBLOG
+# ============================================================
+
+def analyze_sections(article):
+    prompt_template = read_prompt(
+        ANALYZE_PROMPT_FILE
+    )
+
+    sections_text = []
+
+    for index, section in enumerate(
+        article["sections"],
+        start=1
+    ):
+        sections_text.append(
+            f"""
+SECCIÓN {index}
+
+Título:
+{section["title"]}
+
+Autor:
+{section["author"]}
+
+Contenido:
+{section["content"]}
+""".strip()
+        )
+
+    sections_text = "\n\n".join(
+        sections_text
+    )
+
+    prompt = (
+        prompt_template
+        .replace(
+            "{{ARTICLE_TITLE}}",
+            article["title"]
+        )
+        .replace(
+            "{{ARTICLE_DATE}}",
+            article["date"] or ""
+        )
+        .replace(
+            "{{ARTICLE_TYPE}}",
+            article["type"]
+        )
+        .replace(
+            "{{SECTIONS}}",
+            sections_text
+        )
+    )
+
+    print()
+    print(
+        "Analizando secciones con Gemini..."
+    )
+
+    raw = ask_gemini(
+        prompt
+    )
+
+    analysis = extract_json(
+        raw
+    )
+
+    if not isinstance(
+        analysis,
+        list
+    ):
+        raise RuntimeError(
+            "Gemini no devolvió una lista de análisis"
+        )
+
+    return analysis
+
+
+# ============================================================
+# ULTIMOS POSTS
+# ============================================================
+
+def get_last_posts(
+    queue,
+    limit=10
+):
+    posts = []
+
+    for item in queue.get(
+        "items",
+        []
+    ):
+        generated_text = item.get(
+            "generated_text"
+        )
+
+        if generated_text:
+            posts.append({
+                "title": item.get(
+                    "title"
+                ),
+                "text": generated_text
+            })
+
+    return posts[-limit:]
+
+
+def format_last_posts(posts):
+    if not posts:
+        return (
+            "No hay posts publicados anteriormente."
+        )
+
+    result = []
+
+    for index, post in enumerate(
+        posts,
+        start=1
+    ):
+        result.append(
+            f"""
+POST {index}
+
+Sección:
+{post["title"]}
+
+Texto:
+{post["text"]}
+""".strip()
+        )
+
+    return "\n\n".join(
+        result
+    )
+
+
+# ============================================================
+# CREAR COLA
+# ============================================================
+
+def build_content_queue(
+    article,
+    analysis
+):
+    minimum_score = 75
+
+    analysis_by_title = {
+        item.get("title"): item
+        for item in analysis
+        if item.get("title")
+    }
+
+    queue_items = []
+
+    priority = 1
+
+    for section in article["sections"]:
+        result = analysis_by_title.get(
+            section["title"]
+        )
+
+        if not result:
+            continue
+
+        publication_type = result.get(
+            "publication_type",
+            "skip"
+        )
+
+        score = int(
+            result.get(
+                "publication_score",
+                0
+            )
+        )
+
+        if publication_type != "standalone":
+            continue
+
+        if score < minimum_score:
+            continue
+
+        queue_items.append({
+            "article_url": article["url"],
+            "article_title": article["title"],
+            "article_date": article["date"],
+            "article_type": article["type"],
+
+            "title": section["title"],
+            "author": section["author"],
+            "content": section["content"],
+            "images": section.get("images", []),
+            "videos": section.get("videos", []),
+
+            "importance": result.get(
+                "importance",
+                0
+            ),
+
+            "interaction_potential": result.get(
+                "interaction_potential",
+                0
+            ),
+
+            "social_value": result.get(
+                "social_value",
+                0
+            ),
+
+            "publication_score": score,
+
+            "recommended": result.get(
+                "recommended",
+                False
+            ),
+
+            "publication_type": publication_type,
+
+            "content_type": result.get(
+                "content_type",
+                "news"
+            ),
+
+            "reason": result.get(
+                "reason",
+                ""
+            ),
+
+            "published": False,
+            "published_at": None,
+            "platform": None,
+            "post_id": None,
+
+            "generated_text": None,
+            "generated_at": None,
+
+            "priority": priority
+        })
+
+        priority += 1
+
+    queue = {
+        "article": {
+            "url": article["url"],
+            "title": article["title"],
+            "date": article["date"],
+            "type": article["type"],
+
+            # IMPORTANTE:
+            # Guardamos todas las imágenes del patch
+            # para poder usar la primera como fallback.
+            "images": article.get(
+                "images",
+                []
+            ),
+            "videos": article.get(
+                "videos",
+                []
+            )
+        },
+
+        "general_publication": {
+            "generated": False,
+
+            "x_text": None,
+            "discord_text": None,
+
+            "x_posted": False,
+            "x_posted_at": None,
+            "x_post_id": None,
+
+            "discord_posted": False,
+            "discord_posted_at": None,
+
+            "generated_at": None
+        },
+
+        "selection": {
+            "minimum_publication_score": minimum_score,
+            "total_sections": len(
+                article["sections"]
+            ),
+            "selected_sections": len(
+                queue_items
+            )
+        },
+
+        "items": queue_items
+    }
+
+    return queue
+
+
+# ============================================================
+# ANUNCIO GENERAL
+# ============================================================
+
+def generate_general_announcement(
+    queue
+):
+    prompt_template = read_prompt(
+        GENERAL_ANNOUNCEMENT_PROMPT_FILE
+    )
+
+    article = queue["article"]
+
+    selected_sections = []
+
+    for item in queue["items"]:
+        selected_sections.append(
+            f"""
+Título:
+{item["title"]}
+
+Score:
+{item["publication_score"]}
+
+Tipo:
+{item["content_type"]}
+
+Contenido:
+{item["content"]}
+""".strip()
+        )
+
+    sections_text = "\n\n".join(
+        selected_sections
+    )
+
+    last_posts = get_last_posts(
+        queue
+    )
+
+    prompt = (
+        prompt_template
+        .replace(
+            "{{ARTICLE_TITLE}}",
+            article["title"]
+        )
+        .replace(
+            "{{ARTICLE_DATE}}",
+            article.get("date") or ""
+        )
+        .replace(
+            "{{ARTICLE_TYPE}}",
+            article.get("type") or ""
+        )
+        .replace(
+            "{{LAST_POSTS}}",
+            format_last_posts(
+                last_posts
+            )
+        )
+        .replace(
+            "{{SECTIONS}}",
+            sections_text
+        )
+    )
+
+    print()
+    print(
+        "Generando anuncio general..."
+    )
+
+    raw = ask_gemini(
+        prompt
+    )
+
+    result = extract_json(
+        raw
+    )
+
+    x_text = result.get(
+        "x_text"
+    )
+
+    discord_text = result.get(
+        "discord_text"
+    )
+
+    if not x_text:
+        raise RuntimeError(
+            "El anuncio general no contiene x_text"
+        )
+
+    if not discord_text:
+        raise RuntimeError(
+            "El anuncio general no contiene discord_text"
+        )
+
+    return {
+        "x_text": x_text,
+        "discord_text": discord_text
+    }
+
+
+# ============================================================
+# IMAGEN
+# ============================================================
+
+def is_valid_image(
+    image_url
+):
+    if not image_url:
+        return False
+
+    try:
+        response = requests.head(
+            image_url,
+            timeout=15,
+            allow_redirects=True
+        )
+
+        if response.status_code < 400:
+            return True
+
+    except Exception:
+        pass
+
+    # Algunos servidores no responden correctamente
+    # a HEAD. Intentamos GET como fallback.
+    try:
+        response = requests.get(
+            image_url,
+            timeout=15,
+            allow_redirects=True,
+            stream=True
+        )
+
+        if response.status_code < 400:
+            return True
+
+    except Exception:
+        pass
+
+    return False
+
+def is_valid_video(video_url):
+    try:
+        response = requests.get(
+            video_url,
+            headers={"Range": "bytes=0-1023"},
+            timeout=15,
+            stream=True
+        )
+
+        content_type = response.headers.get(
+            "Content-Type", ""
+        ).lower()
+
+        valid = (
+            response.status_code in (200, 206)
+            and (
+                content_type.startswith("video/")
+                or any(
+                    ext in video_url.lower().split("?")[0]
+                    for ext in (
+                        ".mp4", ".webm", ".mov",
+                        ".m4v", ".ogv", ".avi"
+                    )
+                )
+            )
+        )
+
+        response.close()
+        return valid
+
+    except requests.RequestException:
+        return False
+
+
+def get_first_valid_image(
+    item
+):
+    images = item.get(
+        "images"
+    ) or []
+
+    for image_url in images:
+        if is_valid_image(
+            image_url
+        ):
+            return image_url
+
+    return None
+
+
+def get_first_patch_image(queue):
+    """Devuelve la primera imagen válida del patch o de sus secciones."""
+    article = queue.get("article", {})
+
+    image_url = get_first_valid_image(article)
+    if image_url:
+        return image_url
+
+    for item in queue.get("items", []):
+        image_url = get_first_valid_image(item)
+        if image_url:
+            return image_url
+
+    return None
+
+
+def get_first_patch_media(queue):
+    article = queue.get("article", {})
+
+    # 1. Imagen general del patch
+    for image_url in article.get("images") or []:
+        if is_valid_image(image_url):
+            return "image", image_url
+
+    # 2. Video general del patch
+    for video_url in article.get("videos") or []:
+        if is_valid_video(video_url):
+            return "video", video_url
+
+    # 3. Fallback para colas antiguas
+    for item in queue.get("items", []):
+        for image_url in item.get("images") or []:
+            if is_valid_image(image_url):
+                return "image", image_url
+
+        for video_url in item.get("videos") or []:
+            if is_valid_video(video_url):
+                return "video", video_url
+
+    return None, None
+
+
+def get_media_for_section(queue, item):
+    # 1. Imagen propia de la sección
+    for image_url in item.get("images") or []:
+        if is_valid_image(image_url):
+            return "image", image_url
+
+    # 2. Video propio de la sección
+    for video_url in item.get("videos") or []:
+        if is_valid_video(video_url):
+            return "video", video_url
+
+    # 3. Fallback al medio general del patch
+    print("La sección no tiene imágenes ni videos válidos.")
+    print("Buscando medio válido del patch como fallback...")
+
+    return get_first_patch_media(queue)
+
+
+# ============================================================
+# DISCORD
+# ============================================================
+
+def publish_discord(
+    text,
+    image_url=None,
+    article_url=None,
+    article_title=None
+):
+    if not DISCORD_WEBHOOK_URL:
+        raise RuntimeError(
+            "Falta DISCORD_WEBHOOK_URL"
+        )
+
+    payload = {
+        "content": text
+    }
+
+    # --------------------------------------------------------
+    # EMBED DEL PATCH
+    # --------------------------------------------------------
+
+    embed = {}
+
+    if article_title:
+        embed["title"] = article_title
+
+    if article_url:
+        embed["url"] = article_url
+
+    if image_url:
+        embed["image"] = {
+            "url": image_url
+        }
+
+    if embed:
+        payload["embeds"] = [
+            embed
+        ]
+
+    response = requests.post(
+        DISCORD_WEBHOOK_URL,
+        json=payload,
+        timeout=30
+    )
+
+    response.raise_for_status()
+
+    return True
+
+
+# ============================================================
+# PROCESAR ANUNCIO GENERAL
+# ============================================================
+
+
+def process_general_announcement(queue):
+    publication = queue.setdefault(
+        "general_publication",
+        {
+            "generated": False,
+            "x_text": None,
+            "discord_text": None,
+            "x_posted": False,
+            "x_posted_at": None,
+            "x_post_id": None,
+            "discord_posted": False,
+            "discord_posted_at": None,
+            "generated_at": None
+        }
+    )
+
+    # GENERAR UNA SOLA VEZ
+    if not publication.get("generated"):
+        result = generate_general_announcement(queue)
+
+        publication["x_text"] = result["x_text"]
+        publication["discord_text"] = result["discord_text"]
+        publication["generated"] = True
+        publication["generated_at"] = now_iso()
+
+        save_json(QUEUE_FILE, queue)
+
+        print("\nANUNCIO GENERAL - X\n")
+        print(publication["x_text"])
+
+        print("\nANUNCIO GENERAL - DISCORD\n")
+        print(publication["discord_text"])
+
+    # SELECCIONAR MEDIO PARA X
+    media_type, media_url = get_first_patch_media(queue)
+
+    if media_url:
+        print(f"Medio general para X: {media_type} - {media_url}")
+    else:
+        print("ERROR: no se encontró ninguna imagen o video válido.")
+        raise RuntimeError(
+            "No se puede publicar el anuncio general en X sin medios válidos."
+        )
+
+    # PUBLICAR X
+    if not publication.get("x_posted"):
+        print("\nPublicando anuncio general en X mediante Buffer...")
+
+        post = x_publisher.publish(
+            publication["x_text"],
+            media_type=media_type,
+            media_url=media_url
+        )
+
+        publication["x_posted"] = True
+        publication["x_posted_at"] = now_iso()
+        publication["x_post_id"] = post.get("id")
+
+        save_json(QUEUE_FILE, queue)
+
+        print(f"Anuncio general publicado en X. ID: {post.get('id')}")
+
+    # DISCORD: sigue utilizando una imagen, si hay una disponible
+    if not publication.get("discord_posted"):
+        print("\nPublicando anuncio general en Discord...")
+
+        discord_image_url = get_first_patch_image(queue)
+        article = queue.get("article", {})
+
+        publish_discord(
+            publication["discord_text"],
+            image_url=discord_image_url,
+            article_url=article.get("url"),
+            article_title=article.get("title")
+        )
+
+        publication["discord_posted"] = True
+        publication["discord_posted_at"] = now_iso()
+
+        save_json(QUEUE_FILE, queue)
+
+        print("Anuncio general publicado en Discord.")
+
+    return (
+        publication.get("x_posted", False)
+        and publication.get("discord_posted", False)
+    )
+
+
+# ============================================================
+# GENERAR POST DE SECCION
+# ============================================================
+
+def generate_x_post(
+    queue,
+    item
+):
+    prompt_template = read_prompt(
+        X_POST_PROMPT_FILE
+    )
+
+    article = queue["article"]
+
+    last_posts = get_last_posts(
+        queue
+    )
+
+    prompt = (
+        prompt_template
+        .replace(
+            "{{ARTICLE_TITLE}}",
+            article.get("title") or ""
+        )
+        .replace(
+            "{{ARTICLE_DATE}}",
+            article.get("date") or ""
+        )
+        .replace(
+            "{{ARTICLE_TYPE}}",
+            article.get("type") or ""
+        )
+        .replace(
+            "{{LAST_POSTS}}",
+            format_last_posts(
+                last_posts
+            )
+        )
+        .replace(
+            "{{SECTION_TITLE}}",
+            item.get("title") or ""
+        )
+        .replace(
+            "{{AUTHOR}}",
+            item.get("author") or ""
+        )
+        .replace(
+            "{{CONTENT_TYPE}}",
+            item.get("content_type") or ""
+        )
+        .replace(
+            "{{REASON}}",
+            item.get("reason") or ""
+        )
+        .replace(
+            "{{IMPORTANCE}}",
+            str(item.get("importance") or "")
+        )
+        .replace(
+            "{{INTERACTION_POTENTIAL}}",
+            str(item.get("interaction_potential") or "")
+        )
+        .replace(
+            "{{SOCIAL_VALUE}}",
+            str(item.get("social_value") or "")
+        )
+        .replace(
+            "{{CONTENT}}",
+            item.get("content") or ""
+        )
+    )
+
+    print()
+    print(
+        f"Generando post X para: "
+        f"{item['title']}"
+    )
+
+    raw = ask_gemini(
+        prompt
+    )
+
+    result = extract_json(
+        raw
+    )
+
+    text = (
+        result.get("text")
+        or result.get("x_text")
+    )
+
+    if not text:
+        raise RuntimeError(
+            "Gemini no devolvió texto "
+            "para el post X"
+        )
+
+    # Protección contra placeholders sin resolver
+    placeholders = [
+        "{{CONTENT}}",
+        "{{SECTION_CONTENT}}",
+        "{{ARTICLE_TITLE}}",
+        "{{SECTION_TITLE}}",
+        "{{AUTHOR}}",
+        "{{CONTENT_TYPE}}",
+        "{{REASON}}",
+        "{{IMPORTANCE}}",
+        "{{INTERACTION_POTENTIAL}}",
+        "{{SOCIAL_VALUE}}",
+    ]
+
+    for placeholder in placeholders:
+        if placeholder in text:
+            raise RuntimeError(
+                f"Gemini devolvió un placeholder "
+                f"sin resolver: {placeholder}"
+            )
+
+    print()
+    print(
+        "Post generado:"
+    )
+    print(text)
+
+    return text
+
+
+# ============================================================
+# PUBLICAR SIGUIENTE CONTENIDO
+# ============================================================
+
+
+def publish_next_content(queue):
+    items = queue.get("items", [])
+
+    unpublished = [
+        item for item in items
+        if not item.get("published", False)
+    ]
+
+    if not unpublished:
+        print("No quedan secciones pendientes para publicar.")
+        return False
+
+    unpublished.sort(
+        key=lambda item: item.get("priority", 999)
+    )
+
+    item = unpublished[0]
+
+    print("\nPróximo contenido:")
+    print(f"Título: {item['title']}")
+    print(f"Score: {item['publication_score']}")
+    print(f"Prioridad: {item['priority']}")
+
+    # GENERAR TEXTO
+    generated_text = generate_x_post(queue, item)
+
+    # SELECCIONAR MEDIO
+    media_type, media_url = get_media_for_section(queue, item)
+
+    if not media_url:
+        raise RuntimeError(
+            "No se encontró ninguna imagen o video válido "
+            "para esta sección ni para el patch. "
+            "El post no será publicado."
+        )
+
+    print(f"Medio seleccionado: {media_type}")
+    print(media_url)
+
+    # PUBLICAR
+    print("Publicando mediante Buffer...")
+
+    post = x_publisher.publish(
+        generated_text,
+        media_type=media_type,
+        media_url=media_url
+    )
+
+    post_id = post.get("id")
+
+    print(f"Publicado correctamente. ID: {post_id}")
+
+    # GUARDAR ESTADO SOLO DESPUÉS DEL ÉXITO
+    item["published"] = True
+    item["published_at"] = now_iso()
+    item["platform"] = "x"
+    item["post_id"] = post_id
+    item["generated_text"] = generated_text
+    item["generated_at"] = now_iso()
+    item["published_media"] = {
+        "type": media_type,
+        "url": media_url
+    }
+
+    save_json(QUEUE_FILE, queue)
+
+    print("Estado guardado correctamente.")
+
+    return True
+
+
+# ============================================================
+# MAIN
+# ============================================================
+
+def main():
+    ensure_data_dir()
+
+    latest_news = load_json(
+        LATEST_NEWS_FILE,
+        {}
+    )
+
+    queue = load_json(
+        QUEUE_FILE,
+        {}
+    )
+
+    latest_url = get_latest_news()
+
+    # ========================================================
+    # NUEVO ARTICULO
+    # ========================================================
+
+    current_article_url = (
+        queue
+        .get("article", {})
+        .get("url")
+    )
+
+    if current_article_url != latest_url:
+        print()
+        print(
+            "Nuevo artículo detectado."
+        )
+
+        print(
+            latest_url
+        )
+
+        article = scrape_article(
+            latest_url
+        )
+
+        analysis = analyze_sections(
+            article
+        )
+
+        save_json(
+            LATEST_NEWS_FILE,
+            {
+                "url": article["url"],
+                "title": article["title"],
+                "date": article["date"],
+                "type": article["type"]
+            }
+        )
+
+        save_json(
+            ANALYSIS_FILE,
+            analysis
+        )
 
         queue = build_content_queue(
             article,
