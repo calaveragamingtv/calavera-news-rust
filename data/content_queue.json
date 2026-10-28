@@ -78,13 +78,17 @@
       "publication_type": "standalone",
       "content_type": "news",
       "reason": "El evento anual de Halloween con cacería de caramelos y recompensas top como el M249 es un atractivo principal que los jugadores esperan y genera mucha interacción.",
-      "published": false,
-      "published_at": null,
-      "platform": null,
-      "post_id": null,
-      "generated_text": null,
-      "generated_at": null,
-      "priority": 1
+      "published": true,
+      "published_at": "2026-10-28T17:01:58.751131+00:00",
+      "platform": "x",
+      "post_id": "6ae22a8462faea0c57005aa2",
+      "generated_text": "Tres minutos de Candy Hunt y tenés a todo el server corriendo como desesperados para rascar un M249 antes de que termine octubre.",
+      "generated_at": "2026-10-28T17:01:58.751152+00:00",
+      "priority": 1,
+      "published_media": {
+        "type": "image",
+        "url": "https://files.facepunch.com/paddy/20201023/halloween_ghostsheets.jpg"
+      }
     },
     {
       "article_url": "https://rust.facepunch.com/news/halloween-2026",
