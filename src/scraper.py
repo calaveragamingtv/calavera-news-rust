@@ -10,52 +10,54 @@ NEWS_URL = f"{BASE_URL}/news/"
 
 # ============================================================
 def get_latest_news():
-    """Devuelve la URL del artículo más reciente, nunca la página /news/."""
+    """Devuelve la URL del artículo más reciente de Facepunch."""
     print("Consultando noticias de Rust...")
-    response = requests.get(NEWS_URL, timeout=30)
-    response.raise_for_status()
-    soup = BeautifulSoup(response.text, "html.parser")
 
-    candidates = []
+    response = requests.get(
+        NEWS_URL,
+        timeout=30
+    )
+    response.raise_for_status()
+
+    soup = BeautifulSoup(
+        response.text,
+        "html.parser"
+    )
+
     seen = set()
 
-    # Los enlaces de las tarjetas/noticias suelen apuntar a /news/<slug>/.
-    for link in soup.select('a[href]'):
+    # Facepunch muestra las noticias en orden descendente:
+    # la primera URL válida de /news/<slug>/ es la más reciente.
+    for link in soup.select("a[href]"):
         href = (link.get("href") or "").strip()
         if not href:
             continue
+
         absolute = urljoin(BASE_URL, href)
         parsed = urlparse(absolute)
         path = parsed.path.rstrip("/")
 
-        if parsed.netloc.lower() not in {"rust.facepunch.com", "www.rust.facepunch.com"}:
+        if parsed.netloc.lower() not in {
+            "rust.facepunch.com",
+            "www.rust.facepunch.com"
+        }:
             continue
-        if not path.startswith("/news/") or path == "/news":
+
+        # Solo artículos individuales, no /news/ ni rutas hijas.
+        if not re.fullmatch(r"/news/[^/]+", path):
             continue
+
         if absolute in seen:
             continue
+
         seen.add(absolute)
 
-        # Priorizar enlaces que tengan título o estén dentro de un bloque de noticia.
-        text = link.get_text(" ", strip=True)
-        parent_classes = " ".join(link.parent.get("class", [])) if link.parent else ""
-        score = 0
-        if text:
-            score += 1
-        if any(token in parent_classes.lower() for token in ("news", "article", "card", "post")):
-            score += 2
-        if link.select_one("img, picture"):
-            score += 1
-        candidates.append((score, absolute))
+        print(f"Última noticia detectada: {absolute}")
+        return absolute
 
-    if not candidates:
-        raise RuntimeError("No se encontró un enlace a un artículo individual en la página de noticias")
-
-    # Mantener el orden del HTML (Facepunch muestra primero la noticia más reciente).
-    best_score = max(score for score, _ in candidates)
-    url = next(url for score, url in candidates if score == best_score)
-    print(f"Última noticia detectada: {url}")
-    return url
+    raise RuntimeError(
+        "No se pudo encontrar la última noticia"
+    )
 
 
 def scrape_article(url):
