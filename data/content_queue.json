@@ -113,13 +113,17 @@
       "publication_type": "standalone",
       "content_type": "curiosity",
       "reason": "La mecánica de armar tu propio Frankenstein y controlarlo como mascota con la tecla P es una adición súper llamativa y divertida para clips y redes sociales.",
-      "published": false,
-      "published_at": null,
-      "platform": null,
-      "post_id": null,
-      "generated_text": null,
-      "generated_at": null,
-      "priority": 2
+      "published": true,
+      "published_at": "2026-10-29T17:01:42.745021+00:00",
+      "platform": "x",
+      "post_id": "6ae37bf43361c982e45d4fb6",
+      "generated_text": "Armarte tu propio Frankenstein, sacarlo a pasear con la P y que mate al primer pesado que te cruces en el mapa es el mejor agregado del evento.",
+      "generated_at": "2026-10-29T17:01:42.745044+00:00",
+      "priority": 2,
+      "published_media": {
+        "type": "image",
+        "url": "https://files.facepunch.com/paddy/20211026/monstertable_wakeup.jpg"
+      }
     },
     {
       "article_url": "https://rust.facepunch.com/news/halloween-2026",
