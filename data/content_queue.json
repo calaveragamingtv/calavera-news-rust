@@ -145,13 +145,17 @@
       "publication_type": "standalone",
       "content_type": "question",
       "reason": "Los nuevos portales y cultistas generan misterio y el factor '¿te animás a entrar?' funciona muy bien para enganchar a la comunidad.",
-      "published": false,
-      "published_at": null,
-      "platform": null,
-      "post_id": null,
-      "generated_text": null,
-      "generated_at": null,
-      "priority": 3
+      "published": true,
+      "published_at": "2026-10-30T17:02:04.840591+00:00",
+      "platform": "x",
+      "post_id": "6ae4cd86260ad0ee5bbb14ba",
+      "generated_text": "Aparecieron portales de cultistas por todo el mapa y los pocos que entraron y volvieron no quieren contar nada. Buena suerte cruzando eso solo a medianoche.",
+      "generated_at": "2026-10-30T17:02:04.840611+00:00",
+      "priority": 3,
+      "published_media": {
+        "type": "video",
+        "url": "https://files.facepunch.com/paddy/20241025/halloween_portaldoor_720p.mp4"
+      }
     },
     {
       "article_url": "https://rust.facepunch.com/news/halloween-2026",
