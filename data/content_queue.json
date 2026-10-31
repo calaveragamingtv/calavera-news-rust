@@ -177,13 +177,17 @@
       "publication_type": "standalone",
       "content_type": "news",
       "reason": "Los drops de Twitch y los eventos competitivos como Twitch Rivals son anuncios críticos que siempre deben comunicarse de forma independiente para avisar a los jugadores.",
-      "published": false,
-      "published_at": null,
-      "platform": null,
-      "post_id": null,
-      "generated_text": null,
-      "generated_at": null,
-      "priority": 4
+      "published": true,
+      "published_at": "2026-10-31T17:01:25.443607+00:00",
+      "platform": "x",
+      "post_id": "6ae61ee3cf3a3112f3b34bae",
+      "generated_text": "Un día dura el drop exclusivo de Twitch Rivals y ya veo a más de uno colgando toda la noche solo por la mochila.",
+      "generated_at": "2026-10-31T17:01:25.443626+00:00",
+      "priority": 4,
+      "published_media": {
+        "type": "image",
+        "url": "https://files.facepunch.com/errn/2026/October/td_54-blog-image.jpg"
+      }
     },
     {
       "article_url": "https://rust.facepunch.com/news/halloween-2026",
