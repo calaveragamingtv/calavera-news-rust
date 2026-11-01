@@ -221,13 +221,17 @@
       "publication_type": "standalone",
       "content_type": "news",
       "reason": "El listado completo de skins, máscaras de hockey, bates de béisbol y objetos de tienda temática merece su propio post para que los jugadores sepan qué hay en la tienda.",
-      "published": false,
-      "published_at": null,
-      "platform": null,
-      "post_id": null,
-      "generated_text": null,
-      "generated_at": null,
-      "priority": 5
+      "published": true,
+      "published_at": "2026-11-01T17:01:57.889800+00:00",
+      "platform": "x",
+      "post_id": "6ae77083142f545151eecbaa",
+      "generated_text": "Poner la Skull Trophy Pack en la base solo sirve para dejar evidencia de a quién te robaste y que después te vengan a raidear por rencor.",
+      "generated_at": "2026-11-01T17:01:57.889819+00:00",
+      "priority": 5,
+      "published_media": {
+        "type": "image",
+        "url": "https://files.facepunch.com/Alistair/128/10/2024/0397/metal.facemask.hockey.skin.png"
+      }
     }
   ]
 }
