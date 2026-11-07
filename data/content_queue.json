@@ -103,13 +103,17 @@
       "publication_type": "standalone",
       "content_type": "debate",
       "reason": "Es un cambio masivo en la progresión del juego que afectará a todos los jugadores, generando muchísimo debate sobre el early game y el scrap.",
-      "published": false,
-      "published_at": null,
-      "platform": null,
-      "post_id": null,
-      "generated_text": null,
-      "generated_at": null,
-      "priority": 1
+      "published": true,
+      "published_at": "2026-11-07T17:01:31.782975+00:00",
+      "platform": "x",
+      "post_id": "6aef5969229bf05daf61ffc9",
+      "generated_text": "Adiós a gastar scrap en los tech trees. Vuelven los fragments, pages y books para avanzar. O te hacés de alianzas para conseguir lo que te falta o te quedás atrás.",
+      "generated_at": "2026-11-07T17:01:31.782992+00:00",
+      "priority": 1,
+      "published_media": {
+        "type": "image",
+        "url": "https://files.facepunch.com/rin/2026/November/02_15-14-HonestOcelot.jpg"
+      }
     },
     {
       "article_url": "https://rust.facepunch.com/news/printed_and_polished",
