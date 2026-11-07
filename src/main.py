@@ -3,6 +3,7 @@ import os
 import re
 from datetime import datetime, timezone
 
+import time
 import requests
 from google import genai
 from twitter import TwitterPublisher
@@ -111,11 +112,22 @@ def get_gemini_client():
 
 def ask_gemini(prompt):
     client = get_gemini_client()
-
-    response = client.models.generate_content(
-        model=GEMINI_MODEL,
-        contents=prompt,
-    )
+    try:
+        response = client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=prompt
+        )
+    except Exception as e:
+        if "503" in str(e):
+            print("Gemini no disponible. Reintentando en 80 segundos...")
+            time.sleep(120)
+    
+            response = client.models.generate_content(
+                model=MODEL,
+                contents=prompt
+            )
+        else:
+            raise
 
     if not response.text:
         raise RuntimeError(
