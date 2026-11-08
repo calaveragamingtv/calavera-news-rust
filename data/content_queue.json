@@ -135,13 +135,17 @@
       "publication_type": "standalone",
       "content_type": "news",
       "reason": "La incorporación de una nueva arma icónica con doble modo de disparo siempre genera hype inmediato y visuales atractivos para redes.",
-      "published": false,
-      "published_at": null,
-      "platform": null,
-      "post_id": null,
-      "generated_text": null,
-      "generated_at": null,
-      "priority": 2
+      "published": true,
+      "published_at": "2026-11-08T17:01:33.582179+00:00",
+      "platform": "x",
+      "post_id": "6af0aaeb229bf05dafc3aace",
+      "generated_text": "La Uzi nueva con la culata plegada entra con escudos y es full auto. El pvp de bases se va a volver insoportable de inmediato.",
+      "generated_at": "2026-11-08T17:01:33.582198+00:00",
+      "priority": 2,
+      "published_media": {
+        "type": "image",
+        "url": "https://files.facepunch.com/dashfiles/98d820fc-5cb5-4223-907f-d553599250c0/nov2026_uzi_01.jpg"
+      }
     },
     {
       "article_url": "https://rust.facepunch.com/news/printed_and_polished",
