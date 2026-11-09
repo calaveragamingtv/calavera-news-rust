@@ -168,13 +168,17 @@
       "publication_type": "standalone",
       "content_type": "news",
       "reason": "Cambia por completo la experiencia de criar animales, haciéndola menos castigadora y más intuitiva. Ideal para un post central de granjas.",
-      "published": false,
-      "published_at": null,
-      "platform": null,
-      "post_id": null,
-      "generated_text": null,
-      "generated_at": null,
-      "priority": 3
+      "published": true,
+      "published_at": "2026-11-09T17:01:43.934807+00:00",
+      "platform": "x",
+      "post_id": "6af1fc700b813b465067d47e",
+      "generated_text": "Ahora hay que mimar a las vacas desde chiquitas para que tengan buen Potential y rindan más. Cuidar la granja dejó de ser un trámite.",
+      "generated_at": "2026-11-09T17:01:43.934826+00:00",
+      "priority": 3,
+      "published_media": {
+        "type": "video",
+        "url": "https://files.facepunch.com/cipeax/2026/November/rust_cow_petting_1080.mp4"
+      }
     },
     {
       "article_url": "https://rust.facepunch.com/news/printed_and_polished",
