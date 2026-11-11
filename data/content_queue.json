@@ -232,13 +232,17 @@
       "publication_type": "standalone",
       "content_type": "news",
       "reason": "Que los servidores pesados arranquen en 2 minutos en lugar de 10 es una excelente noticia para administradores y jugadores ansiosos por el wipe.",
-      "published": false,
-      "published_at": null,
-      "platform": null,
-      "post_id": null,
-      "generated_text": null,
-      "generated_at": null,
-      "priority": 5
+      "published": true,
+      "published_at": "2026-11-11T17:01:28.445777+00:00",
+      "platform": "x",
+      "post_id": "6af49f66aa9908a25ec4357e",
+      "generated_text": "Diez minutos de espera para que arranque el server ya era una tortura. Bajarlo a dos minutos cambia por completo el dolor de cabeza de cada parche.",
+      "generated_at": "2026-11-11T17:01:28.445795+00:00",
+      "priority": 5,
+      "published_media": {
+        "type": "image",
+        "url": "https://files.facepunch.com/jakerich/8apUBJymQwuC/4TNMUkrK9GSD.png"
+      }
     },
     {
       "article_url": "https://rust.facepunch.com/news/printed_and_polished",
