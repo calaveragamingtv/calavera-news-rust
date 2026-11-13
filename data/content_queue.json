@@ -264,13 +264,17 @@
       "publication_type": "standalone",
       "content_type": "news",
       "reason": "El baneo masivo de más de 3,000 cuentas por uso de scripts es una noticia excelente que genera validación y comentarios positivos masivos en la comunidad.",
-      "published": false,
-      "published_at": null,
-      "platform": null,
-      "post_id": null,
-      "generated_text": null,
-      "generated_at": null,
-      "priority": 6
+      "published": true,
+      "published_at": "2026-11-13T17:01:34.175672+00:00",
+      "platform": "x",
+      "post_id": "6af7426b0234d2352e21887f",
+      "generated_text": "Más de 3,000 cuentas baneadas de una sola sentada por usar scripts. Ojalá los dps dejen de parecer láseres imposibles este wipe.",
+      "generated_at": "2026-11-13T17:01:34.175691+00:00",
+      "priority": 6,
+      "published_media": {
+        "type": "image",
+        "url": "https://files.facepunch.com/ryanw/2026/November/03_13-04-KeyWhitetippedreefshark.png"
+      }
     },
     {
       "article_url": "https://rust.facepunch.com/news/printed_and_polished",
