@@ -294,13 +294,17 @@
       "publication_type": "standalone",
       "content_type": "debate",
       "reason": "El anuncio de un servicio de suscripción mensual ('Rust Premium') es la noticia más debatible y comentada del mes, generando opiniones divididas.",
-      "published": false,
-      "published_at": null,
-      "platform": null,
-      "post_id": null,
-      "generated_text": null,
-      "generated_at": null,
-      "priority": 7
+      "published": true,
+      "published_at": "2026-11-14T17:01:36.597513+00:00",
+      "platform": "x",
+      "post_id": "6af893e6b9a106584c5a33a6",
+      "generated_text": "Suscripción mensual con skins exclusivas y perks. Si esto termina metiendo ventajas reales adentro del servidor, el juego se va a la mierda.",
+      "generated_at": "2026-11-14T17:01:36.597530+00:00",
+      "priority": 7,
+      "published_media": {
+        "type": "video",
+        "url": "https://files.facepunch.com/lewis/2026/November/pp_blog_hero.mp4"
+      }
     }
   ]
 }
